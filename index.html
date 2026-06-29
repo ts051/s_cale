@@ -1,0 +1,2344 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#245b3a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="WhiteTree">
+    <link rel="manifest" href="static/manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="static/icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="static/icons/apple-touch-icon.png">
+    <title>WhiteTree</title>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.18/index.global.min.js"></script>
+    <style>
+        /* Googleカレンダーアプリ風 モバイルファーストベース */
+        body { 
+            font-family: "Roboto", "Segoe UI", "Arial", sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #ffffff; 
+            color: #3c4043;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        /* ダークモード用のスタイル定義 */
+        body.dark-mode {
+            background-color: #121212;
+            color: #e8eaed;
+        }
+        body.dark-mode .app-bar {
+            background-color: #1f1f1f;
+            border-bottom: 1px solid #3c4043;
+        }
+        body.dark-mode .app-bar h1, body.dark-mode .menu-btn {
+            color: #e8eaed;
+        }
+        body.dark-mode .drawer {
+            background-color: #1f1f1f;
+            box-shadow: 0 0 16px rgba(0,0,0,0.5);
+        }
+        body.dark-mode .drawer h2 {
+            color: #9aa0a6;
+        }
+        body.dark-mode .drawer-section {
+            border-bottom: 1px solid #3c4043;
+        }
+        body.dark-mode .menu-item-label {
+            color: #e8eaed;
+        }
+        body.dark-mode .menu-item-label:has(input:checked) {
+            background-color: #38444d;
+            color: #8ab4f8;
+        }
+        body.dark-mode .select-styled, body.dark-mode .drawer-input, body.dark-mode .label-mgmt-item input[type="text"] {
+            background-color: #2d2d2d;
+            border: 1px solid #3c4043;
+            color: #e8eaed;
+        }
+        body.dark-mode .btn-sidebar {
+            color: #e8eaed;
+        }
+        body.dark-mode .btn-sidebar:hover, body.dark-mode .btn-sidebar:active {
+            background-color: #2d2d2d;
+        }
+        body.dark-mode .calendar-container, body.dark-mode #calendar {
+            background-color: #121212;
+        }
+        body.dark-mode .fc {
+            --fc-border-color: #2d2d2d;
+            --fc-today-bg-color: #1a233a !important;
+        }
+        body.dark-mode .fc .fc-toolbar-title {
+            color: #e8eaed;
+        }
+        body.dark-mode .fc .fc-col-header-cell-cushion {
+            color: #9aa0a6;
+        }
+        body.dark-mode .fc .fc-daygrid-day-number {
+            color: #e8eaed;
+        }
+        body.dark-mode .fc .fc-daygrid-day.fc-day-sat { background-color: #101f30; }
+        body.dark-mode .fc .fc-daygrid-day.fc-day-sun { background-color: #2d1919; }
+        body.dark-mode .fc .fc-toolbar .fc-menuButton-button { color: #e8eaed !important; }
+        body.dark-mode .auth-container, body.dark-mode .settings-container {
+            background-color: #121212;
+        }
+        body.dark-mode .spa-card, body.dark-mode .spa-card-wide {
+            background-color: #1f1f1f;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        body.dark-mode .spa-card h2, body.dark-mode .spa-card-wide h2, body.dark-mode .spa-card-wide h3 {
+            color: #e8eaed;
+        }
+        body.dark-mode .form-group label {
+            color: #9aa0a6;
+        }
+        body.dark-mode .form-group input[type="text"], body.dark-mode .form-group input[type="password"] {
+            background-color: #2d2d2d;
+            border: 1px solid #3c4043;
+            color: #e8eaed;
+        }
+        body.dark-mode .help-text {
+            color: #9aa0a6;
+        }
+        body.dark-mode .bottom-sheet {
+            background-color: #1f1f1f;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.4);
+        }
+        body.dark-mode .sheet-header {
+            border-bottom: 1px solid #3c4043;
+        }
+        body.dark-mode .sheet-title {
+            color: #e8eaed;
+        }
+        body.dark-mode .sheet-close {
+            color: #9aa0a6;
+        }
+        body.dark-mode .day-event-item {
+            background-color: #2d2d2d;
+            color: #e8eaed;
+        }
+        body.dark-mode .modal {
+            background-color: #1f1f1f;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+        }
+        body.dark-mode .modal input[type="text"] {
+            border-bottom: 2px solid #3c4043;
+            color: #e8eaed;
+            background-color: transparent;
+        }
+        body.dark-mode .modal-field {
+            color: #9aa0a6;
+        }
+        body.dark-mode .modal-field input[type="time"], body.dark-mode .modal-field input[type="date"] {
+            background-color: #2d2d2d;
+            border: 1px solid #3c4043;
+            color: #e8eaed;
+        }
+        body.dark-mode .label-mgmt-item {
+            background-color: #2d2d2d;
+        }
+        body.dark-mode .label-order-btn {
+            background-color: #1f1f1f;
+            border-color: #3c4043;
+            color: #e8eaed;
+        }
+        body.dark-mode .fc .fc-daygrid-more-link {
+            background: #2d2d2d;
+            color: #e8eaed !important;
+        }
+
+        /* SPA用セクション制御 */
+        .spa-section {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #calendarSection {
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* ログイン・設定カード用スタイル統合 */
+        .auth-container {
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            height: 100dvh;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+            box-sizing: border-box;
+        }
+        .settings-container {
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
+            box-sizing: border-box;
+        }
+        .spa-card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 320px;
+        }
+        .spa-card-wide {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .spa-card h2, .spa-card-wide h2 { margin-top: 0; text-align: center; color: #333; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #666; font-weight: bold; }
+        .form-group input[type="text"], .form-group input[type="password"] {
+            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px;
+        }
+        .btn-block { width: 100%; padding: 10px; background-color: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: 500; }
+        .btn-block:hover { background-color: #1557b0; }
+        
+        .settings-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-cancel { background-color: #6c757d; text-align: center; text-decoration: none; color: white; padding: 10px; border-radius: 4px; flex: 1; font-size: 16px; border: none; cursor: pointer; }
+        .btn-cancel:hover { background-color: #5a6268; }
+        .btn-save { flex: 1; padding: 10px; }
+        
+        .help-text { font-size: 12px; color: #6c757d; margin-top: 4px; font-weight: normal; }
+        .alert-text { color: red; font-size: 14px; text-align: center; margin-bottom: 10px; min-height: 18px; }
+
+        /* 最上部アプリバー（成功時フラッシュメッセージとセーフエリア確保用） */
+        .app-bar {
+            display: flex;
+            align-items: center;
+            padding: calc(6px + env(safe-area-inset-top)) 12px 0px 12px;
+            background-color: transparent;
+            height: auto;
+            box-sizing: border-box;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        /* ハンバーガーメニュー（引き出しドロワー） */
+        .drawer-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh;
+            background: transparent;
+            z-index: 100;
+        }
+        .drawer {
+            position: fixed;
+            top: 0; left: -280px; width: 280px; height: 100vh; height: 100dvh;
+            background: white;
+            box-shadow: 0 0 16px rgba(0,0,0,0.15);
+            z-index: 101;
+            transition: left 0.2s ease-out;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 16px;
+            padding-top: calc(30px + env(safe-area-inset-top));
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .drawer.open { left: 0; }
+        .drawer h2 {
+            font-size: 14px;
+            color: #70757a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 20px 0 10px 4px;
+            font-weight: 500;
+        }
+        .drawer h2:first-of-type { margin-top: 10px; }
+
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 2px 6px 14px;
+            border-bottom: 1px solid #dadce0;
+        }
+        .drawer-app-mark {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+        }
+        .drawer-app-name { font-size: 17px; font-weight: 700; color: #245b3a; }
+        .drawer-user { font-size: 12px; color: #70757a; margin-top: 2px; }
+        .menu-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 9px 12px;
+            font-size: 14px;
+        }
+        .menu-control-text { display: flex; align-items: center; min-width: 0; }
+        .menu-control .select-styled { width: auto; min-width: 138px; }
+        .drawer-details summary { list-style: none; }
+        .drawer-details summary::-webkit-details-marker { display: none; }
+        .drawer-details summary::after { content: '›'; margin-left: auto; font-size: 20px; transition: transform .15s; }
+        .drawer-details[open] summary::after { transform: rotate(90deg); }
+        .drawer-details-content { padding: 4px 8px 10px 36px; }
+        body.dark-mode .drawer-header { border-bottom-color: #3c4043; }
+        body.dark-mode .drawer-app-name { color: #9cc9aa; }
+        body.dark-mode .drawer-user { color: #9aa0a6; }
+
+        .drawer-section {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            border-bottom: 1px solid #dadce0;
+            padding-bottom: 16px;
+        }
+        .drawer-section:last-of-type { border: none; }
+
+        .menu-item-label {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #3c4043;
+            cursor: pointer;
+            border-radius: 0 24px 24px 0;
+            margin-left: -16px;
+            width: calc(100% + 16px);
+            box-sizing: border-box;
+        }
+        .menu-item-label input { margin-right: 12px; }
+        .menu-item-label:has(input:checked) {
+            background-color: #e8f0fe;
+            color: #1a73e8;
+            font-weight: 500;
+        }
+
+        .select-styled {
+            border: 1px solid #dadce0;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #3c4043;
+            background-color: #ffffff;
+            width: 100%;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .btn-sidebar {
+            text-decoration: none;
+            color: #3c4043;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.1s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        .btn-sidebar:hover, .btn-sidebar:active { background-color: #f8f9fa; }
+        .btn-logout { color: #d93025; }
+        .btn-logout:active { background-color: #fce8e6; }
+
+        .drawer-input {
+            padding: 6px 8px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-bottom: 6px;
+            outline: none;
+        }
+        .drawer-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        /* ラベル管理リスト用のスタイル */
+        .label-mgmt-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .label-mgmt-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #f8f9fa;
+            padding: 6px;
+            border-radius: 4px;
+        }
+        .label-mgmt-item input[type="text"] {
+            flex: 1;
+            font-size: 14px;
+            padding: 4px;
+            border: 1px solid #dadce0;
+            border-radius: 3px;
+            min-width: 0;
+        }
+        .label-order-controls {
+            display: flex;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .label-order-btn {
+            width: 24px;
+            height: 24px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            background: #ffffff;
+            color: #5f6368;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+        .label-order-btn:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        /* カレンダー表示エリア */
+        .calendar-container {
+            flex: 1;
+            padding: 4px;
+            background-color: #ffffff;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #calendar { 
+            height: 100%; 
+            transition: transform 0.25s cubic-bezier(0.4, 0.0, 0.2, 1), opacity 0.25s linear;
+            will-change: transform, opacity;
+        }
+        
+        .slide-up-out { transform: translateY(-80px); opacity: 0; }
+        .slide-up-in { transform: translateY(80px); opacity: 0; transition: none !important; }
+        .slide-down-out { transform: translateY(80px); opacity: 0; }
+        .slide-down-in { transform: translateY(-80px); opacity: 0; transition: none !important; }
+
+        /* FullCalendar 微調整 */
+        .fc {
+            --fc-border-color: #f1f3f4;
+            --fc-today-bg-color: #e8f0fe !important;
+            font-size: 10px !important; 
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .fc .fc-view-harness {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+        .fc .fc-view-harness-active > .fc-view,
+        .fc .fc-scrollgrid,
+        .fc .fc-daygrid-body,
+        .fc .fc-daygrid-body table {
+            height: 100% !important;
+        }
+        .fc .fc-daygrid-body tbody tr {
+            height: 16.666666% !important;
+        }
+        
+        .fc .fc-toolbar { 
+            margin-bottom: 4px !important; 
+            padding: calc(4px + env(safe-area-inset-top)) 12px 4px 12px; /* 上部にセーフエリアを追加 */
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+        }
+        
+        /* ツールバー各エリアの幅を均等に保ちつつ配置を安定化 */
+        .fc .fc-toolbar-chunk {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+        .fc .fc-toolbar-chunk:nth-child(1) { justify-content: flex-start; }
+        .fc .fc-toolbar-chunk:nth-child(2) { justify-content: center; }
+        .fc .fc-toolbar-chunk:nth-child(3) { justify-content: flex-end; }
+
+        /* カスタムハンバーガーボタンの装飾スタイル */
+        .fc .fc-toolbar .fc-menuButton-button {
+            background: none !important;
+            border: none !important;
+            font-size: 20px !important;
+            color: #5f6368 !important;
+            cursor: pointer !important;
+            padding: 4px 8px !important;
+            box-shadow: none !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .fc .fc-toolbar .fc-menuButton-button:active { background-color: rgba(0, 0, 0, 0.05) !important; border-radius: 50%; }
+
+        .fc .fc-toolbar-title { 
+            font-size: 16px !important; 
+            font-weight: 500; 
+            color: #3c4043; 
+            text-align: center;
+            white-space: nowrap;
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            z-index: 5 !important;
+        }
+        .fc .fc-button-group { display: none !important; }
+        .fc .fc-today-button {
+            background-color: transparent !important;
+            border: none !important;
+            color: #1a73e8 !important;
+            padding: 4px 8px !important;
+            box-shadow: none !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+        }
+
+        /* 曜日・日付の色付け設定（土曜日を青、日曜日を赤） */
+        .fc .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion { color: #1a73e8 !important; }
+        .fc .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion { color: #d93025 !important; }
+        .fc .fc-daygrid-day.fc-day-sat { background-color: #f1f7fe; }
+        .fc .fc-daygrid-day.fc-day-sun { background-color: #fdf2f2; }
+        .fc .fc-daygrid-day.fc-day-sat .fc-daygrid-day-number { color: #1a73e8 !important; }
+        .fc .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number { color: #d93025 !important; }
+
+        .fc .fc-col-header-cell-cushion { font-size: 10px; color: #70757a; padding: 4px 0 !important; text-decoration: none !important; }
+        .fc .fc-daygrid-day-number { font-size: 10px; color: #3c4043; padding: 2px 4px !important; text-decoration: none !important; }
+
+        /* 日付の数字を中央揃えにする */
+        .fc-daygrid-day-number {
+            width: 100%;
+            text-align: center;
+            padding: 4px 0 !important;
+        }
+        /* 親要素の配置をリセットして中央寄せを有効化 */
+        .fc .fc-daygrid-day-top {
+            flex-direction: row;
+            justify-content: center;
+        }
+        /* 月予定の設定 */
+        .fc-event {
+            border-radius: 3px !important;
+            padding: 0px 2px !important;
+            font-size: 8.5px !important;
+            line-height: 1.2 !important;
+            margin-bottom: 1px !important;
+            border: none !important;
+        }
+        .fc .fc-daygrid-day-frame {
+            height: 100% !important;
+            max-height: 100% !important;
+            min-height: 0 !important;
+            display: flex;
+            flex-direction: column;
+            overflow: visible !important;
+        }
+        .fc .fc-daygrid-day-events {
+            flex: 1 1 auto;
+            min-height: 0 !important;
+            overflow: visible !important;
+            position: relative;
+            z-index: 5;
+        }
+        .fc .fc-daygrid-day,
+        .fc .fc-daygrid-event-harness,
+        .fc .fc-daygrid-event-harness-abs {
+            overflow: visible !important;
+        }
+        .fc .fc-daygrid-day-bottom {
+            flex: 0 0 auto;
+            min-height: 12px;
+        }
+        .fc .fc-daygrid-more-link {
+            display: inline-block;
+            margin-top: 1px;
+            padding: 0 4px;
+            border-radius: 999px;
+            background: #eef2f5;
+            color: #5f6368 !important;
+            font-size: 8.5px;
+            font-weight: 600;
+            text-decoration: none !important;
+        }
+
+        .fc-daygrid-event:not(.fc-event-forced-all-day) .fc-daygrid-event-dot {
+            display: none !important;
+        }
+        .fc-daygrid-event:not(.fc-event-forced-all-day,.fc-event-holiday) {
+            background-color: var(--fc-event-bg-alpha-color, rgba(122, 148, 166, 0.15)) !important;
+            color: var(--fc-event-text-solid-color, #7a94a6) !important;
+            padding: 1px 4px !important;
+        }
+        .fc .multi-day-segment {
+            position: relative !important;
+            z-index: 20 !important;
+            border-radius: 0 !important;
+            margin-left: -4px !important;
+            margin-right: -4px !important;
+            width: calc(100% + 8px) !important;
+            min-height: 11px !important;
+            background-color: var(--multi-day-segment-color) !important;
+            box-shadow: 4px 0 0 var(--multi-day-segment-color), -4px 0 0 var(--multi-day-segment-color);
+            overflow: visible !important;
+        }
+        .fc .multi-day-segment::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: -4px;
+            right: -4px;
+            z-index: -1;
+            background: var(--multi-day-segment-color);
+            pointer-events: none;
+        }
+        .fc .multi-day-segment-start {
+            border-top-left-radius: 3px !important;
+            border-bottom-left-radius: 3px !important;
+            margin-left: 0 !important;
+            width: calc(100% + 4px) !important;
+            box-shadow: 4px 0 0 var(--multi-day-segment-color);
+        }
+        .fc .multi-day-segment-start::before {
+            left: 0;
+            border-top-left-radius: 3px;
+            border-bottom-left-radius: 3px;
+        }
+        .fc .multi-day-segment-end {
+            border-top-right-radius: 3px !important;
+            border-bottom-right-radius: 3px !important;
+            margin-right: 0 !important;
+            width: calc(100% + 4px) !important;
+            box-shadow: -4px 0 0 var(--multi-day-segment-color);
+        }
+        .fc .multi-day-segment-end::before {
+            right: 0;
+            border-top-right-radius: 3px;
+            border-bottom-right-radius: 3px;
+        }
+        .fc .multi-day-segment-continuation .fc-event-title,
+        .fc .multi-day-segment-continuation .fc-event-time {
+            visibility: hidden;
+        }
+        .fc .multi-day-segment .fc-event-main {
+            min-height: 10px;
+            background: var(--multi-day-segment-color) !important;
+        }
+
+        /* 祝日のデザイン設定：他の終日予定の枠組と完全一致（アクセント線なし、濃い赤背景、白文字） */
+        .fc-event-holiday {
+            background-color: #d93025 !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            border: none !important;
+            border-left: none !important;
+            box-shadow: none !important;
+        }
+        body.dark-mode .fc-event-holiday {
+            background-color: #b31412 !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-left: none !important;
+            box-shadow: none !important;
+        }
+
+
+        /* 共通モーダルベース */
+        .modal-overlay { 
+            display: none; 
+            position: fixed; 
+            top:0; left:0; width:100%; height:100vh; height:100dvh; 
+            background: transparent; 
+            z-index: 999; 
+        }
+
+        /* 1日表示用のボトムシート */
+        .bottom-sheet {
+            display: none;
+            position: fixed;
+            bottom: -100%; left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+            z-index: 1000;
+            transition: bottom 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+            padding: 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            box-sizing: border-box;
+            max-height: 70vh;
+            max-height: 70dvh;
+            display: flex;
+            flex-direction: column;
+        }
+        .bottom-sheet.open {
+            bottom: 0;
+            display: flex;
+        }
+        
+        .sheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #dadce0;
+            padding-bottom: 10px;
+        }
+        .sheet-title { font-size: 16px; font-weight: 500; color: #3c4043; }
+        .sheet-close { background: none; border: none; font-size: 20px; color: #5f6368; cursor: pointer; }
+        
+        .day-event-list {
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-bottom: 60px;
+        }
+        .day-event-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: #f8f9fa;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .day-event-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .fab-add {
+            position: absolute;
+            bottom: calc(20px + env(safe-area-inset-bottom));
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background-color: #1a73e8;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 10;
+        }
+        .fab-add:active { background-color: #1557b0; }
+
+        /* 予定登録ポップアップ */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+            z-index: 1010; 
+            width: 85%; 
+            max-width: 340px; 
+            max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+            overflow-y: auto;
+            animation: fadeIn 0.15s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .modal input[type="text"] { 
+            width: 100%; 
+            font-size: 16px;
+            border: none;
+            border-bottom: 2px solid #dadce0;
+            padding: 6px 0;
+            margin-bottom: 16px;
+            outline: none;
+            color: #3c4043;
+            box-sizing: border-box;
+        }
+        .modal input[type="text"]:focus { border-bottom-color: #1a73e8; }
+        
+        .modal-field {
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #5f6368;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-field input[type="checkbox"] { width: 16px; height: 16px; }
+        
+        .modal-field input[type="time"], .modal-field input[type="date"] { 
+            padding: 6px 8px;
+            border: 1px solid #dadce0; 
+            border-radius: 4px; 
+            font-size: 14px; 
+            color: #3c4043; 
+            background: #ffffff; 
+            box-sizing: border-box;
+            height: auto;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .memo-textarea {
+            width: 100%;
+            box-sizing: border-box;
+            resize: vertical;
+            padding: 8px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #3c4043;
+            background-color: #ffffff;
+            outline: none;
+        }
+
+        .memo-textarea:focus {
+            border-color: #1a73e8;
+        }
+
+        body.dark-mode .memo-textarea {
+            background-color: #2d2d2d;
+            border: 1px solid #3c4043;
+            color: #e8eaed;
+        }
+
+        .modal-btns { 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 8px; 
+            margin-top: 16px; 
+        }
+        .btn { 
+            padding: 6px 16px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .btn-primary { background: #1a73e8; color: white; }
+        .btn-secondary { background: transparent; color: #5f6368; }
+        
+        .flash-success { color: #137333; background-color: #e6f4ea; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-left: 8px; }
+        .offline-status { color: #5f6368; background-color: #fef7e0; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-left: 8px; }
+        body.dark-mode .offline-status { color: #fdd663; background-color: #3c3520; }
+
+        /* ログイン確認が完了するまでのチラつき防止用初期設定 */
+        #loginSection, #settingsSection, #labelSection {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loginSection" class="spa-section auth-container">
+        <div class="spa-card">
+            <h2>WhiteTree</h2>
+            <div class="alert-text" id="loginAlert"></div>
+            <form id="loginForm" onsubmit="handleLoginSubmit(event)">
+                <div class="form-group">
+                    <label>ユーザー名</label>
+                    <input type="text" id="loginUsername" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>パスワード</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-block">ログイン</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="settingsSection" class="spa-section settings-container">
+        <div class="spa-card-wide">
+            <h2>アカウント設定</h2>
+            <div class="alert-text" id="settingsAlert"></div>
+            <form id="settingsForm" onsubmit="handleSettingsSubmit(event)">
+                <div class="form-group">
+                    <label>ユーザー名</label>
+                    <input type="text" id="settingsUsername" required>
+                </div>
+                <div class="form-group">
+                    <label>新しいパスワード</label>
+                    <input type="password" id="settingsPassword" placeholder="変更する場合のみ入力" autocomplete="new-password">
+                    <div class="help-text">変更しない場合は空欄のままにしてください。</div>
+                </div>
+                <div class="settings-btns">
+                    <button type="button" class="btn-cancel" onclick="showSection('calendar')">キャンセル</button>
+                    <button type="submit" class="btn-block btn-save">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="labelSection" class="spa-section settings-container" style="overflow-y: auto; overflow-x: hidden; align-items: flex-start;">
+        <div class="spa-card-wide" style="margin-top: 20px; margin-bottom: 20px; box-sizing: border-box;">
+            <h2>ラベル設定</h2>
+            
+            <div style="border: 1px solid #dadce0; padding: 12px; border-radius: 6px; margin-bottom: 20px; background-color: #fafafa; box-sizing: border-box;">
+                <h3 style="font-size: 14px; margin-top: 0; color: #3c4043;">新規ラベル作成</h3>
+                <input type="text" id="newLabelName" placeholder="ラベル名" class="drawer-input" style="width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 10px; font-size: 14px; border: 1px solid #dadce0; border-radius: 4px;">
+                <div class="drawer-row" style="margin-bottom: 12px;">
+                    <label style="font-weight: bold; font-size: 14px;">カラー：</label>
+                    <input type="color" id="newLabelColor" value="#7a94a6" style="width:24px; height:24px; border:none; padding:0; background:none; cursor:pointer; border-radius:50%; -webkit-appearance:none; appearance:none; flex-shrink:0;">
+                </div>
+                <div class="drawer-row" style="margin-bottom: 12px; gap: 16px;">
+                    <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="newLabelScope" value="shared" checked style="transform: scale(1.1); margin-right: 4px;"> 共有</label>
+                    <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="newLabelScope" value="private" style="transform: scale(1.1); margin-right: 4px;"> 個人</label>
+                </div>
+                <button class="btn btn-primary" onclick="addNewLabel()" style="width: 100%; padding: 8px; font-size: 14px;">ラベルを追加</button>
+            </div>
+
+            <h3 style="font-size: 14px; color: #3c4043; margin-bottom: 8px;">登録済みラベルの管理</h3>
+            <div class="label-mgmt-list" id="labelMgmtList" style="margin-bottom: 20px;"></div>
+
+            <div class="settings-btns">
+                <button type="button" class="btn-cancel" onclick="showSection('calendar')" style="width: 100%;">カレンダーに戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="calendarSection" class="spa-section">
+        <div class="app-bar">
+            <div id="successFlashContainer"></div>
+        </div>
+
+        <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer(false)"></div>
+        <div class="drawer" id="drawer">
+            <div class="drawer-header">
+                <img class="drawer-app-mark" src="static/icons/icon-192.png" alt="">
+                <div>
+                    <div class="drawer-app-name">WhiteTree</div>
+                    <div id="drawerUserInfo" class="drawer-user">ユーザー</div>
+                </div>
+            </div>
+
+            <h2>表示カレンダー</h2>
+            <div class="drawer-section">
+                <label class="menu-item-label"><input type="radio" name="viewFilter" value="all" checked onclick="closeDrawerAndFilter()"> すべて表示</label>
+                <label class="menu-item-label"><input type="radio" name="viewFilter" value="shared" onclick="closeDrawerAndFilter()"> 共有</label>
+                <label class="menu-item-label"><input type="radio" name="viewFilter" value="private" onclick="closeDrawerAndFilter()"> 個人</label>
+            </div>
+
+            <h2>設定</h2>
+            <div class="drawer-section">
+                <label class="menu-control">
+                    <span class="menu-control-text">週の開始</span>
+                    <select id="startDay" class="select-styled" aria-label="週の開始曜日">
+                        <option value="1">月曜日はじまり</option>
+                        <option value="0">日曜日はじまり</option>
+                    </select>
+                </label>
+                <label class="menu-control" style="cursor: pointer;">
+                    <span class="menu-control-text">ダークモード</span>
+                    <input type="checkbox" id="drawerDarkMode" onchange="handleDrawerDarkModeChange()" style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
+                </label>
+                <button class="btn-sidebar" onclick="openLabelSPA()">ラベル設定</button>
+                <button class="btn-sidebar" onclick="openSettingsSPA()">アカウント設定</button>
+            </div>
+
+            <h2>データ</h2>
+            <div class="drawer-section">
+                <details class="drawer-details">
+                    <summary class="btn-sidebar">ICS 入出力</summary>
+                    <div class="drawer-details-content">
+                        <a href="#" onclick="exportICSFile(); return false;" class="btn btn-secondary" style="text-align:center; text-decoration:none; display:block; border:1px solid #dadce0; font-size:12px; padding:7px; margin-bottom:8px;">エクスポート</a>
+                        <input type="file" id="icsFileInput" accept=".ics,text/calendar" style="font-size:11px; width:100%; margin-bottom:6px;">
+                        <button class="btn btn-primary" onclick="importICSFile()" style="font-size:11px; padding:6px 8px; width:100%;">インポート</button>
+                    </div>
+                </details>
+                <details class="drawer-details">
+                    <summary class="btn-sidebar btn-logout">データ削除</summary>
+                    <div class="drawer-details-content">
+                        <button class="btn-sidebar btn-logout" onclick="deleteAllEvents()">すべての予定を削除</button>
+                    </div>
+                </details>
+            </div>
+
+            <div class="drawer-section" style="margin-top: auto; border: none; padding-bottom: 0;">
+                <button class="btn-sidebar btn-logout" onclick="handleLogout()">ログアウト</button>
+            </div>
+        </div>
+
+        <div class="calendar-container">
+            <div id="calendar"></div>
+        </div>
+
+        <div class="modal-overlay" id="overlay" onclick="closeAllModals()"></div>
+
+        <div class="bottom-sheet" id="daySheet">
+            <div class="sheet-header">
+                <div class="sheet-title" id="sheetDateTitle">0000年00月00日</div>
+                <button class="sheet-close" onclick="closeDaySheet()">✕</button>
+            </div>
+            <div class="day-event-list" id="sheetEventList"></div>
+            <button class="fab-add" onclick="openRegisterFormFromSheet()">＋</button>
+        </div>
+
+        <div class="modal" id="eventModal">
+            <input type="text" id="eventTitle" placeholder="タイトルを追加">
+            
+            <div class="modal-field">
+                <input type="checkbox" id="isShared" checked onchange="filterModalLabels(document.getElementById('editingEventId').value !== '')">
+                <label id="checkboxLabel" style="cursor:pointer;" for="isShared">共有カレンダーに保存する</label>
+            </div>
+
+            <div class="modal-field">
+                <input type="checkbox" id="isAllDay" checked onchange="toggleTimeFields()">
+                <label style="cursor:pointer;" for="isAllDay">終日</label>
+            </div>
+
+            <div class="modal-field" style="gap: 12px; align-items: flex-start; flex-direction: column; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <span style="min-width: 45px; font-weight: bold;">開始：</span>
+                    <input type="date" id="eventStart">
+                    <input type="time" id="startTime" value="09:00" style="display: none;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <span style="min-width: 45px; font-weight: bold;">終了：</span>
+                    <input type="date" id="eventEnd">
+                    <input type="time" id="endTime" value="10:00" style="display: none;">
+                </div>
+            </div>
+
+            <div class="modal-field" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                <label style="font-size: 12px; color: #70757a;">繰り返し</label>
+                <select id="eventRecurrence" class="select-styled" style="width: 100%; box-sizing: border-box;">
+                    <option value="">なし</option>
+                    <option value="weekly">毎週</option>
+                    <option value="monthly">毎月</option>
+                    <option value="yearly">毎年</option>
+                </select>
+            </div>
+
+            <div class="modal-field" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                <label>予定ラベル：</label>
+                <select id="eventLabelSelect" class="select-styled"></select>
+            </div>
+
+            <div class="modal-field" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                <label>メモ：</label>
+                <textarea id="eventMemo" rows="3" class="memo-textarea"></textarea>
+            </div>
+
+            <input type="hidden" id="editingEventId">
+            
+            <div class="modal-btns">
+                <button class="btn" style="background-color:#d93025; color:white; display:none; margin-right:auto;" id="btnDeleteModal" onclick="deleteEventFromModal()">削除</button>
+                <button class="btn btn-secondary" onclick="closeRegisterModal()">キャンセル</button>
+                <button class="btn btn-primary" onclick="saveEvent()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/local-api.js"></script>
+    <script>
+        let calendar;
+        let allEvents = [];
+        let cachedLabels = [];
+        let cachedHolidays = []; // 祝日データを一時保持するキャッシュ配列を追加
+        let isAnimating = false;
+        let selectedDateStr = "";
+        let currentUser = null;
+        let lastSelectedLabelId = null;
+        let calendarDataInitialized = false;
+        let currentDataRangeKey = '';
+
+        function getUserCacheIdentity(user) {
+            if (!user) return 'anonymous';
+            const userId = user.user_id || user.id;
+            return userId ? `id:${userId}` : `name:${user.username || 'anonymous'}`;
+        }
+
+        function isSameUser(a, b) {
+            if (!a || !b) return false;
+            const aId = a.user_id || a.id;
+            const bId = b.user_id || b.id;
+            if (aId && bId) return String(aId) === String(bId);
+            if (aId || bId) return false;
+            return a.username === b.username;
+        }
+
+        function resetCalendarData() {
+            calendarDataInitialized = false;
+            currentDataRangeKey = '';
+            allEvents = [];
+            cachedLabels = [];
+            cachedHolidays = [];
+            if (calendar) {
+                try {
+                    calendar.getEventSources().forEach(source => source.remove());
+                } catch (error) {
+                    console.warn('Calendar reset failed:', error);
+                }
+            }
+        }
+
+        function setOfflineStatus(isOffline) {
+            const container = document.getElementById('successFlashContainer');
+            if (!container) return;
+            const current = container.querySelector('.offline-status');
+            if (isOffline && !current) {
+                container.insertAdjacentHTML('beforeend', '<div class="offline-status">オフライン：保存済みの内容を表示しています</div>');
+            } else if (!isOffline && current) {
+                current.remove();
+            }
+        }
+
+        function dataCacheKey(url) {
+            return `whiteTree:data:v2:${getUserCacheIdentity(currentUser)}:${url}`;
+        }
+
+        function toDateParam(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function getCalendarRangeUrls() {
+            if (!calendar || !calendar.view) {
+                return {
+                    holidays: '/api/holidays',
+                    events: '/api/events',
+                    key: 'default'
+                };
+            }
+
+            const activeStart = new Date(calendar.view.activeStart);
+            const activeEnd = new Date(calendar.view.activeEnd);
+            activeStart.setMonth(activeStart.getMonth() - 1);
+            activeEnd.setMonth(activeEnd.getMonth() + 1);
+
+            const start = toDateParam(activeStart);
+            const end = toDateParam(activeEnd);
+            const params = `start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+            return {
+                holidays: `/api/holidays?${params}`,
+                events: `/api/events?${params}`,
+                key: `${start}:${end}`
+            };
+        }
+
+        function getCachedJson(url) {
+            const cached = localStorage.getItem(dataCacheKey(url));
+            if (cached === null) return null;
+            try {
+                return JSON.parse(cached);
+            } catch (error) {
+                localStorage.removeItem(dataCacheKey(url));
+                return null;
+            }
+        }
+
+        async function fetchJsonAndCache(url) {
+            const response = await fetch(url, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            try {
+                localStorage.setItem(dataCacheKey(url), JSON.stringify(data));
+            } catch (error) {
+                console.warn('Data cache save failed:', error);
+            }
+            setOfflineStatus(false);
+            return data;
+        }
+
+        async function fetchJsonWithCache(url) {
+            try {
+                return await fetchJsonAndCache(url);
+            } catch (error) {
+                const cached = getCachedJson(url);
+                if (cached !== null) {
+                    setOfflineStatus(true);
+                    return cached;
+                }
+                throw error;
+            }
+        }
+
+        // --- 初期ロード時にダークモードの設定を読み込む ---
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.body.classList.add('dark-mode');
+        }
+
+        // --- SPA 画面切り替えロジック ---
+        function showSection(sectionId) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('settingsSection').style.display = 'none';
+            document.getElementById('labelSection').style.display = 'none';
+            document.getElementById('calendarSection').style.display = 'none';
+
+            if (sectionId === 'calendar') {
+                document.getElementById('calendarSection').style.display = 'flex';
+                if (calendar) {
+                    calendar.render();
+                }
+            } else if (sectionId === 'login') {
+                document.getElementById('loginSection').style.display = 'flex';
+            } else if (sectionId === 'settings') {
+                document.getElementById('settingsSection').style.display = 'flex';
+            } else if (sectionId === 'label') {
+                document.getElementById('labelSection').style.display = 'flex';
+            }
+        }
+
+        // 初期認証チェック
+        function checkAuthStatus() {
+            const cachedUser = localStorage.getItem('whiteTree:lastUser');
+            if (cachedUser) {
+                try {
+                    currentUser = JSON.parse(cachedUser);
+                    document.getElementById('drawerUserInfo').innerText = currentUser.username;
+                    const weekStart = currentUser.week_start === 0 ? 0 : 1;
+                    document.getElementById('startDay').value = String(weekStart);
+                    if (calendar) calendar.setOption('firstDay', weekStart);
+                    showSection('calendar');
+                    initializeCalendarData();
+                } catch (error) {
+                    localStorage.removeItem('whiteTree:lastUser');
+                }
+            }
+
+            fetch('/api/me')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.logged_in) {
+                        const previousUser = currentUser;
+                        currentUser = data;
+                        localStorage.setItem('whiteTree:lastUser', JSON.stringify(data));
+                        document.getElementById('drawerUserInfo').innerText = data.username;
+                        const weekStart = data.week_start === 0 ? 0 : 1;
+                        document.getElementById('startDay').value = String(weekStart);
+                        if (calendar) calendar.setOption('firstDay', weekStart);
+                        showSection('calendar');
+                        if (previousUser && !isSameUser(previousUser, data)) {
+                            resetCalendarData();
+                        }
+                        initializeCalendarData();
+                    } else {
+                        localStorage.removeItem('whiteTree:lastUser');
+                        showSection('login');
+                    }
+                })
+                .catch(() => {
+                    const cachedUser = localStorage.getItem('whiteTree:lastUser');
+                    if (!cachedUser || currentUser) {
+                        if (currentUser) setOfflineStatus(true);
+                        if (!currentUser) showSection('login');
+                        return;
+                    }
+                    try {
+                        currentUser = JSON.parse(cachedUser);
+                    } catch (error) {
+                        localStorage.removeItem('whiteTree:lastUser');
+                        showSection('login');
+                        return;
+                    }
+                    document.getElementById('drawerUserInfo').innerText = currentUser.username;
+                    const weekStart = currentUser.week_start === 0 ? 0 : 1;
+                    document.getElementById('startDay').value = String(weekStart);
+                    if (calendar) calendar.setOption('firstDay', weekStart);
+                    setOfflineStatus(true);
+                    showSection('calendar');
+                    initializeCalendarData();
+                });
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const usernameVal = document.getElementById('loginUsername').value;
+            const passwordVal = document.getElementById('loginPassword').value;
+            const alertDiv = document.getElementById('loginAlert');
+            alertDiv.innerText = '';
+
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: usernameVal, password: passwordVal })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    resetCalendarData();
+                    currentUser = {
+                        logged_in: true,
+                        user_id: data.user_id,
+                        username: data.username,
+                        week_start: data.week_start
+                    };
+                    localStorage.setItem('whiteTree:lastUser', JSON.stringify(currentUser));
+                    document.getElementById('loginUsername').value = '';
+                    document.getElementById('loginPassword').value = '';
+                    checkAuthStatus();
+                } else {
+                    alertDiv.innerText = data.error;
+                }
+            });
+        }
+
+        function handleLogout() {
+            toggleDrawer(false);
+            fetch('/api/logout', { method: 'POST' })
+            .catch(error => {
+                console.warn('Logout request failed:', error);
+            })
+            .finally(() => {
+                currentUser = null;
+                localStorage.removeItem('whiteTree:lastUser');
+                resetCalendarData();
+                showSection('login');
+            });
+        }
+
+        function openSettingsSPA() {
+            toggleDrawer(false);
+            const alertDiv = document.getElementById('settingsAlert');
+            alertDiv.innerText = '';
+            document.getElementById('settingsPassword').value = '';
+
+            fetch('/api/me')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.logged_in) {
+                        document.getElementById('settingsUsername').value = data.username;
+                        showSection('settings');
+                    } else {
+                        showSection('login');
+                    }
+                });
+        }
+
+        function openLabelSPA() {
+            toggleDrawer(false);
+            renderLabelManagement();
+            showSection('label');
+        }
+
+        function handleSettingsSubmit(e) {
+            e.preventDefault();
+            const usernameVal = document.getElementById('settingsUsername').value;
+            const passwordVal = document.getElementById('settingsPassword').value;
+            const alertDiv = document.getElementById('settingsAlert');
+            alertDiv.innerText = '';
+
+            fetch('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: usernameVal, password: passwordVal })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const flashContainer = document.getElementById('successFlashContainer');
+                    flashContainer.innerHTML = '<div class="flash-success">アカウント情報を更新しました。</div>';
+                    setTimeout(() => { flashContainer.innerHTML = ''; }, 4000);
+                    checkAuthStatus();
+                } else {
+                    alertDiv.innerText = data.error;
+                }
+            });
+        }
+
+        function handleDrawerDarkModeChange() {
+            const isDarkModeChecked = document.getElementById('drawerDarkMode').checked;
+            if (isDarkModeChecked) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.removeItem('darkMode');
+            }
+            if (typeof applyFilter === 'function' && calendar) {
+                applyFilter();
+            }
+        }
+
+        function initializeCalendarData() {
+            if (calendarDataInitialized) return;
+            calendarDataInitialized = true;
+            const rangeUrls = getCalendarRangeUrls();
+            currentDataRangeKey = rangeUrls.key;
+
+            const cachedLabelsData = getCachedJson('/api/labels');
+            if (cachedLabelsData !== null) {
+                cachedLabels = cachedLabelsData;
+                filterModalLabels(false);
+            }
+
+            const cachedHolidayData = getCachedJson(rangeUrls.holidays);
+            const cachedEventData = getCachedJson(rangeUrls.events);
+            if (cachedHolidayData !== null && cachedEventData !== null) {
+                renderCalendarData(cachedHolidayData, cachedEventData);
+            }
+
+            loadLabels()
+                .then(() => {
+                    filterModalLabels(false);
+                })
+                .catch(err => {
+                    console.error("ラベルの読み込みに失敗しました:", err);
+                    cachedLabels = [];
+                    filterModalLabels(false);
+                });
+
+            Promise.all([
+                fetchJsonWithCache(rangeUrls.holidays).then(value => ({ ok: true, value }), reason => ({ ok: false, reason })),
+                fetchJsonWithCache(rangeUrls.events).then(value => ({ ok: true, value }), reason => ({ ok: false, reason }))
+            ])
+            .then(([holidaysResult, eventsResult]) => {
+                if (!eventsResult.ok) {
+                    console.error("予定の読み込みに失敗しました:", eventsResult.reason);
+                    calendarDataInitialized = false;
+                    return;
+                }
+
+                const holidaysData = holidaysResult.ok ? holidaysResult.value : [];
+                if (!holidaysResult.ok) {
+                    console.error("祝日の読み込みに失敗しました:", holidaysResult.reason);
+                }
+                renderCalendarData(holidaysData, eventsResult.value);
+            });
+        }
+        // カラーコード変換ヘルパー
+        function normalizeHolidayEvents(holidaysData) {
+            return holidaysData.map(h => {
+                return {
+                    id: 'holiday-' + h.start,
+                    title: h.title,
+                    start: h.start,
+                    end: h.end || h.start,
+                    allDay: true,
+                    color: '#d93025',
+                    backgroundColor: '#d93025',
+                    extendedProps: { is_holiday: 1, is_mine: false, is_shared: true }
+                };
+            });
+        }
+
+        function renderCalendarData(holidaysData, eventsData) {
+            cachedHolidays = normalizeHolidayEvents(Array.isArray(holidaysData) ? holidaysData : []);
+            allEvents = Array.isArray(eventsData) ? eventsData : [];
+            if (calendar) applyFilter();
+        }
+
+        function expandMultiDayAllDayEvents(events) {
+            const expanded = [];
+
+            events.forEach(event => {
+                if (!event.allDay || !event.start || !event.end) {
+                    expanded.push(event);
+                    return;
+                }
+
+                const startDate = event.start.split('T')[0];
+                const endDate = event.end.split('T')[0];
+                const secondDay = addDaysToDateStr(startDate, 1);
+
+                if (endDate <= secondDay) {
+                    expanded.push(event);
+                    return;
+                }
+
+                let currentDate = startDate;
+                let index = 0;
+                while (currentDate < endDate) {
+                    expanded.push({
+                        ...event,
+                        id: `${event.id}__day_${currentDate}`,
+                        title: event.title,
+                        start: currentDate,
+                        end: addDaysToDateStr(currentDate, 1),
+                        allDay: true,
+                        display: 'block',
+                        extendedProps: {
+                            ...(event.extendedProps || {}),
+                            original_id: event.extendedProps?.original_id || event.id,
+                            multi_day_segment_index: index
+                        }
+                    });
+                    currentDate = addDaysToDateStr(currentDate, 1);
+                    index += 1;
+                }
+            });
+
+            return expanded;
+        }
+
+        function hexToRgba(hex, alpha) {
+            hex = hex.replace('#', '');
+            if (hex.length === 3) {
+                hex = hex.split('').map(c => c + c).join('');
+            }
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function toggleDrawer(open) {
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('drawerOverlay');
+            if (open) {
+                drawer.classList.add('open');
+                overlay.style.display = 'block';
+            } else {
+                drawer.classList.remove('open');
+                overlay.style.display = 'none';
+            }
+        }
+
+        function closeDrawerAndFilter() {
+            toggleDrawer(false);
+            applyFilter();
+        }
+
+        function toggleTimeFields() {
+            const isAllDay = document.getElementById('isAllDay').checked;
+            document.getElementById('startTime').style.display = isAllDay ? 'none' : 'inline-block';
+            document.getElementById('endTime').style.display = isAllDay ? 'none' : 'inline-block';
+        }
+
+        // データベースに登録されている終了日(翌日0時)を、画面(終了日当日)用にマイナス1日して返す
+        function adjustEndDateForUI(endStr, isAllDay) {
+            if (!isAllDay || !endStr) return endStr;
+            const dateParts = endStr.split('T')[0].split('-');
+            if (dateParts.length !== 3) return endStr;
+            
+            const dateObj = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+            dateObj.setDate(dateObj.getDate() - 1);
+            
+            const yyyy = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${yyyy}-${m}-${d}`;
+        }
+
+        function addDaysToDateStr(dateStr, days) {
+            const dateParts = dateStr.split('T')[0].split('-');
+            if (dateParts.length !== 3) return dateStr;
+
+            const dateObj = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+            dateObj.setDate(dateObj.getDate() + days);
+
+            const yyyy = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${yyyy}-${m}-${d}`;
+        }
+
+        function filterModalLabels(isEdit, currentLabelId) {
+            const isSharedChecked = document.getElementById('isShared').checked;
+            const select = document.getElementById('eventLabelSelect');
+            select.innerHTML = '';
+            
+            const filtered = cachedLabels
+                .filter(l => isSharedChecked ? l.is_shared : !l.is_shared)
+                .sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999) || a.id - b.id);
+            filtered.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l.id;
+                opt.innerText = l.name;
+                select.appendChild(opt);
+            });
+
+            if (isEdit) {
+                select.value = currentLabelId || '';
+            } else {
+                if (lastSelectedLabelId && filtered.some(l => l.id == lastSelectedLabelId)) {
+                    select.value = lastSelectedLabelId;
+                } else if (filtered.length > 0) {
+                    select.value = filtered[0].id;
+                } else {
+                    select.value = '';
+                }
+            }
+        }
+
+        function loadLabels() {
+            return fetchJsonWithCache('/api/labels')
+                .then(data => {
+                    cachedLabels = data;
+                });
+        }
+
+        function renderLabelManagement() {
+            const container = document.getElementById('labelMgmtList');
+            container.innerHTML = '';
+            if (cachedLabels.length === 0) {
+                container.innerHTML = '<div style="font-size:13px; color:#70757a; text-align:center; padding: 10px;">ラベルがありません</div>';
+                return;
+            }
+
+            const byOrder = (a, b) => (a.sort_order || 999) - (b.sort_order || 999) || a.id - b.id;
+            const sharedLabels = cachedLabels.filter(l => l.is_shared).sort(byOrder);
+            const privateLabels = cachedLabels.filter(l => !l.is_shared).sort(byOrder);
+
+            const createHtml = (l, index, total, scope) => `
+                <div class="label-mgmt-item" style="box-sizing: border-box;">
+                    <div class="label-order-controls">
+                        <button type="button" class="label-order-btn" title="上へ" onclick="moveLabel('${scope}', ${l.id}, -1)" ${index === 0 ? 'disabled' : ''}>^</button>
+                        <button type="button" class="label-order-btn" title="下へ" onclick="moveLabel('${scope}', ${l.id}, 1)" ${index === total - 1 ? 'disabled' : ''}>v</button>
+                    </div>
+                    <input type="color" id="mgmtColor-${l.id}" value="${l.color}" style="width:24px; height:24px; border:none; padding:0; background:none; cursor:pointer; border-radius:50%; -webkit-appearance:none; appearance:none; flex-shrink:0;">
+                    <input type="text" id="mgmtName-${l.id}" value="${l.name}">
+                    <button class="btn btn-primary" style="font-size:12px; padding:4px 8px; cursor:pointer;" onclick="updateLabel(${l.id})">保存</button>
+                    <button class="btn" style="font-size:12px; padding:4px 8px; background-color:#d93025; color:white; cursor:pointer;" onclick="deleteLabel(${l.id})">削除</button>
+                </div>
+            `;
+
+            if (sharedLabels.length > 0) {
+                const heading = document.createElement('div');
+                heading.style = 'font-size:13px; font-weight:bold; color:#5f6368; margin-top:8px; margin-bottom:4px;';
+                heading.innerText = '■ 共有ラベル (全員に表示されます)';
+                container.appendChild(heading);
+                sharedLabels.forEach((l, index) => {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = createHtml(l, index, sharedLabels.length, 'shared');
+                    container.appendChild(temp.firstElementChild);
+                });
+            }
+
+            if (privateLabels.length > 0) {
+                const heading = document.createElement('div');
+                heading.style = 'font-size:13px; font-weight:bold; color:#5f6368; margin-top:16px; margin-bottom:4px;';
+                heading.innerText = '■ 個人ラベル (あなただけに表示されます)';
+                container.appendChild(heading);
+                privateLabels.forEach((l, index) => {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = createHtml(l, index, privateLabels.length, 'private');
+                    container.appendChild(temp.firstElementChild);
+                });
+            }
+        }
+
+        function moveLabel(scope, id, direction) {
+            const isShared = scope === 'shared';
+            const byOrder = (a, b) => (a.sort_order || 999) - (b.sort_order || 999) || a.id - b.id;
+            const scopedLabels = cachedLabels.filter(l => isShared ? l.is_shared : !l.is_shared).sort(byOrder);
+            const currentIndex = scopedLabels.findIndex(l => l.id === id);
+            const nextIndex = currentIndex + direction;
+            if (currentIndex < 0 || nextIndex < 0 || nextIndex >= scopedLabels.length) return;
+
+            [scopedLabels[currentIndex], scopedLabels[nextIndex]] = [scopedLabels[nextIndex], scopedLabels[currentIndex]];
+            scopedLabels.forEach((label, index) => { label.sort_order = index + 1; });
+            renderLabelManagement();
+
+            fetch('/api/labels/reorder', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_shared: isShared, label_ids: scopedLabels.map(l => l.id) })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) throw new Error(data.error || 'Failed to reorder labels');
+                return loadLabels();
+            })
+            .then(() => {
+                filterModalLabels(document.getElementById('editingEventId').value !== '');
+                renderLabelManagement();
+                refreshEvents();
+            })
+            .catch(err => {
+                console.error(err);
+                loadLabels().then(renderLabelManagement);
+            });
+        }
+
+        function addNewLabel() {
+            const name = document.getElementById('newLabelName').value;
+            const color = document.getElementById('newLabelColor').value;
+            const is_shared = document.querySelector('input[name="newLabelScope"]:checked').value === 'shared';
+
+            if (!name) {
+                alert('ラベル名を入力してください');
+                return;
+            }
+
+            fetch('/api/labels', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, color, is_shared })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('newLabelName').value = '';
+                    loadLabels().then(() => {
+                        filterModalLabels(document.getElementById('editingEventId').value !== '');
+                        renderLabelManagement();
+                        refreshEvents();
+                    });
+                }
+            });
+        }
+
+        function updateLabel(id) {
+            const name = document.getElementById(`mgmtName-${id}`).value;
+            const color = document.getElementById(`mgmtColor-${id}`).value;
+            if(!name) return alert('名前を入力してください');
+
+            fetch(`/api/labels/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, color })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    loadLabels().then(() => {
+                        filterModalLabels(document.getElementById('editingEventId').value !== '');
+                        renderLabelManagement();
+                        refreshEvents();
+                    });
+                }
+            });
+        }
+
+        function deleteLabel(id) {
+            if(!confirm('このラベルを削除しますか？紐づく予定のカラーはデフォルトに戻ります。')) return;
+            fetch(`/api/labels/${id}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    loadLabels().then(() => {
+                        filterModalLabels(document.getElementById('editingEventId').value !== '');
+                        renderLabelManagement();
+                        refreshEvents();
+                    });
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+            const calendarEl = document.getElementById('calendar');
+            const drawerEl = document.getElementById('drawer');
+            const labelSectionEl = document.getElementById('labelSection');
+            const settingsSectionEl = document.getElementById('settingsSection');
+
+            // 各種別画面・ドロワー内での上下スライド・ホイール操作の伝播を抑止してカレンダー移動の誤作動を防ぐ
+            const stopPropagationFunc = function(e) { e.stopPropagation(); };
+            drawerEl.addEventListener('wheel', stopPropagationFunc, { passive: true });
+            drawerEl.addEventListener('touchstart', stopPropagationFunc, { passive: true });
+            drawerEl.addEventListener('touchend', stopPropagationFunc, { passive: true });
+
+            labelSectionEl.addEventListener('wheel', stopPropagationFunc, { passive: true });
+            labelSectionEl.addEventListener('touchstart', stopPropagationFunc, { passive: true });
+            labelSectionEl.addEventListener('touchend', stopPropagationFunc, { passive: true });
+
+            settingsSectionEl.addEventListener('wheel', stopPropagationFunc, { passive: true });
+            settingsSectionEl.addEventListener('touchstart', stopPropagationFunc, { passive: true });
+            settingsSectionEl.addEventListener('touchend', stopPropagationFunc, { passive: true });
+
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ja',
+                firstDay: 1,
+                selectable: false,
+                editable: false,
+                displayEventTime: false,
+                fixedWeekCount: true,
+                expandRows: true,
+                dayMaxEventRows: 5,
+                moreLinkClick: function(info) {
+                    const y = info.date.getFullYear();
+                    const m = String(info.date.getMonth() + 1).padStart(2, '0');
+                    const d = String(info.date.getDate()).padStart(2, '0');
+                    openDaySheet(`${y}-${m}-${d}`);
+                    return false;
+                },
+                dayHeaderFormat: { weekday: 'short' }, // 曜日を短縮一文字形式（月、火…）で上部に表示
+                
+                dayCellContent: function(e) { return e.dayNumberText.replace('日', ''); },
+
+                eventOrder: function(a, b) {
+                    let aHoliday = a.extendedProps?.is_holiday || 0;
+                    let bHoliday = b.extendedProps?.is_holiday || 0;
+                    if (aHoliday !== bHoliday) { return bHoliday - aHoliday; }
+                    if (a.allDay !== b.allDay) { return a.allDay ? -1 : 1; }
+                    const aLabelOrder = a.extendedProps?.label_order || 999;
+                    const bLabelOrder = b.extendedProps?.label_order || 999;
+                    if (aLabelOrder !== bLabelOrder) { return aLabelOrder - bLabelOrder; }
+                    if (a.start !== b.start) { return a.start < b.start ? -1 : 1; }
+                    return a.title.localeCompare(b.title, 'ja');
+                },
+
+                customButtons: {
+                    menuButton: {
+                        text: '☰',
+                        click: function() {
+                            toggleDrawer(true);
+                        }
+                    }
+                },
+                headerToolbar: { left: 'menuButton', center: 'title', right: 'today' },
+                // JavaScript側で一括供給するため、古い eventSources 設定は排除
+                eventSources: [],
+                eventClick: function(info) {
+                    openDaySheet(info.event.startStr.split('T')[0]);
+                    // 既存の予定データから繰り返し設定を復元してセット
+                    const recurrenceVal = (info.event.extendedProps && info.event.extendedProps.recurrence) ? info.event.extendedProps.recurrence : '';
+                    document.getElementById('eventRecurrence').value = recurrenceVal;
+                },
+
+                dateClick: function(info) { if (isAnimating) return; openDaySheet(info.dateStr); },
+
+                eventClassNames: function(arg) {
+                    if (arg.event.extendedProps.is_holiday) return ['fc-event-holiday'];
+                    if (arg.event.allDay) return ['fc-event-forced-all-day'];
+                    return [];
+                },
+
+                eventDidMount: function(info) {
+                    if (info.el.classList.contains('multi-day-segment')) {
+                        const segmentColor = info.event.backgroundColor || info.event.borderColor || '#7a94a6';
+                        info.el.style.setProperty('--multi-day-segment-color', segmentColor);
+                    }
+                    if (!info.event.allDay && !info.event.extendedProps.is_holiday) {
+                        const baseColor = info.event.backgroundColor || '#7a94a6';
+                        info.el.style.setProperty('--fc-event-bg-alpha-color', hexToRgba(baseColor, 0.15));
+                        info.el.style.setProperty('--fc-event-text-solid-color', baseColor);
+                    }
+                },
+
+                // カレンダー描画・月更新ごとに確実にタイトルタップイベントを紐付ける
+                datesSet: function(info) {
+                    const titleEl = calendarEl.querySelector('.fc-toolbar-title');
+                    if (titleEl) {
+                        // 重複作成を防止するため、すでに作成済みのpickerがないか確認する
+                        let picker = calendarEl.querySelector('#dynamicMonthPicker');
+                        if (!picker) {
+                            picker = document.createElement('input');
+                            picker.type = 'month';
+                            picker.id = 'dynamicMonthPicker';
+                            // 完全に非表示にしつつ、タップ領域として重ねるためのスタイル設定
+                            picker.style.position = 'absolute';
+                            picker.style.top = '0';
+                            picker.style.left = '0';
+                            picker.style.width = '100%';
+                            picker.style.height = '100%';
+                            picker.style.opacity = '0';
+                            picker.style.cursor = 'pointer';
+                            picker.style.zIndex = '10';
+                            
+                            // 親のchunk要素を基準位置に設定
+                            if (titleEl.parentElement) {
+                                titleEl.parentElement.style.position = 'relative';
+                                titleEl.parentElement.appendChild(picker);
+                            }
+
+                            picker.addEventListener('change', function() {
+                                if (picker.value) {
+                                    calendar.gotoDate(picker.value + '-01');
+                                }
+                            });
+                        }
+                    }
+
+                    if (currentUser && calendarDataInitialized) {
+                        const rangeUrls = getCalendarRangeUrls();
+                        if (rangeUrls.key !== currentDataRangeKey) {
+                            refreshEvents();
+                        }
+                    }
+                }
+            });
+
+            function changeMonthWithAnimation(direction) {
+                if (isAnimating) return;
+                isAnimating = true;
+                closeAllModals();
+
+                const outClass = direction === 'next' ? 'slide-up-out' : 'slide-down-out';
+                const inClass = direction === 'next' ? 'slide-up-in' : 'slide-down-in';
+                
+                calendarEl.classList.add(outClass);
+
+                setTimeout(() => {
+                    if (direction === 'next') { calendar.next(); } else { calendar.prev(); }
+                    calendarEl.classList.remove(outClass);
+                    calendarEl.classList.add(inClass);
+
+                    requestAnimationFrame(() => {
+                        setTimeout(() => {
+                            calendarEl.classList.remove(inClass);
+                            setTimeout(() => { isAnimating = false; }, 250);
+                        }, 20);
+                    });
+                }, 230);
+            }
+
+            calendarEl.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                if (isAnimating) return;
+                if (e.deltaY > 0) { changeMonthWithAnimation('next'); } else if (e.deltaY < 0) { changeMonthWithAnimation('prev'); }
+            }, { passive: false });
+
+            let touchStartY = 0;
+            let touchEndY = 0;
+            calendarEl.addEventListener('touchstart', function(e) { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
+            calendarEl.addEventListener('touchend', function(e) {
+                touchEndY = e.changedTouches[0].screenY;
+                if (!isAnimating) {
+                    const diff = touchStartY - touchEndY;
+                    if (Math.abs(diff) > 45) {
+                        if (diff > 0) { changeMonthWithAnimation('next'); } else { changeMonthWithAnimation('prev'); }
+                    }
+                }
+            }, { passive: true });
+
+            document.getElementById('startDay').addEventListener('change', function(e) {
+                const previousValue = calendar.getOption('firstDay');
+                const weekStart = parseInt(e.target.value, 10);
+                calendar.setOption('firstDay', weekStart);
+                fetch('/api/preferences', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ week_start: weekStart })
+                }).then(res => {
+                    if (!res.ok) throw new Error('設定を保存できませんでした。');
+                    toggleDrawer(false);
+                }).catch(() => {
+                    calendar.setOption('firstDay', previousValue);
+                    e.target.value = String(previousValue);
+                    alert('週の開始曜日を保存できませんでした。');
+                });
+            });
+
+            // SPA初期状態確認のトリガー
+            checkAuthStatus();
+
+            // ドロワーのダークモードチェックボックスの初期状態を同期
+            document.getElementById('drawerDarkMode').checked = document.body.classList.contains('dark-mode');
+            } catch (error) {
+                console.error(error);
+                showSection('login');
+            }
+        });
+
+        function openDaySheet(dateStr) {
+            selectedDateStr = dateStr;
+            const parts = dateStr.split('-');
+            document.getElementById('sheetDateTitle').innerText = `${parts[0]}年${parts[1]}月${parts[2]}日`;
+            
+            const dayEvents = allEvents.filter(e => {
+                const sDate = e.start.split('T')[0];
+                let eDate = e.end ? e.end.split('T')[0] : sDate;
+                if (e.allDay && e.start !== eDate) {
+                    eDate = adjustEndDateForUI(eDate, true);
+                }
+                return dateStr >= sDate && dateStr <= eDate;
+            });
+            // 統合された配列から現在の祝日を抽出
+            const holidayEvents = cachedHolidays.filter(h => h.start === dateStr);
+            
+            let combinedList = [];
+            holidayEvents.forEach(h => {
+                combinedList.push({
+                    id: null, title: h.title, start: h.start, end: h.end, allDay: true, color: 'transparent',
+                    extendedProps: { is_holiday: 1, is_mine: false, is_shared: true }
+                });
+            });
+            dayEvents.forEach(e => { combinedList.push(e); });
+            
+            combinedList.sort((a, b) => {
+                let aHoliday = a.extendedProps?.is_holiday || 0;
+                let bHoliday = b.extendedProps?.is_holiday || 0;
+                if (aHoliday !== bHoliday) { return bHoliday - aHoliday; }
+                if (a.allDay !== b.allDay) { return a.allDay ? -1 : 1; }
+                const aLabelOrder = a.extendedProps?.label_order || 999;
+                const bLabelOrder = b.extendedProps?.label_order || 999;
+                if (aLabelOrder !== bLabelOrder) { return aLabelOrder - bLabelOrder; }
+                if (a.start !== b.start) { return a.start < b.start ? -1 : 1; }
+                return a.title.localeCompare(b.title, 'ja');
+            });
+
+            const listContainer = document.getElementById('sheetEventList');
+            listContainer.innerHTML = "";
+
+            if (combinedList.length === 0) {
+                listContainer.innerHTML = `<div style="color:#70757a; font-size:13px; text-align:center; margin-top:20px;">予定はありません</div>`;
+            } else {
+                combinedList.forEach(ev => {
+                    const item = document.createElement('div');
+                    item.className = 'day-event-item';
+                    
+                    const isHoliday = ev.extendedProps?.is_holiday === 1;
+                    const eventColor = isHoliday ? '#d93025' : (ev.color || (ev.extendedProps.is_shared ? '#8fa89b' : '#7a94a6'));
+                    const isMine = ev.extendedProps.is_mine;
+                    
+                    let rightInfoHtml = "";
+                    if (isHoliday) {
+                        rightInfoHtml = `<span style="font-size:11px; color:#d93025; font-weight:bold;">祝日</span>`;
+                    } else if (!isMine) {
+                        rightInfoHtml = `<span style="font-size:11px; color:#9aa0a6;">相手の予定</span>`;
+                    }
+
+                    let timeSuffixInfo = `<span style="font-size:11px; color:#70757a; font-weight:normal; margin-left:8px;">終日</span>`;
+                    if (isHoliday) {
+                        timeSuffixInfo = ""; 
+                    } else if (!ev.allDay && ev.start.includes('T')) {
+                        const sTime = ev.start.split('T')[1].substring(0, 5);
+                        const eTime = ev.end.includes('T') ? ev.end.split('T')[1].substring(0, 5) : "";
+                        timeSuffixInfo = `<span style="font-size:12px; color:#1a73e8; font-weight:normal; margin-left:8px;">${sTime}${eTime ? '～' + eTime : ''}</span>`;
+                    }
+
+                    item.innerHTML = `
+                        <div style="display:flex; align-items:center; overflow:hidden; flex:1; justify-content:space-between; margin-right:12px;">
+                            <div style="display:flex; align-items:center; overflow:hidden;">
+                                <div class="day-event-dot" style="background-color: ${eventColor};"></div>
+                                <span style="font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; ${isHoliday ? 'color:#d93025; font-weight:bold;' : ''}">${ev.title}</span>
+                            </div>
+                            ${timeSuffixInfo}
+                        </div>
+                        ${rightInfoHtml}
+                    `;
+                    
+                    if (!isHoliday) {
+                        item.style.cursor = 'pointer';
+                        item.onclick = function() { openEditModal(ev); };
+                    }
+                    listContainer.appendChild(item);
+                });
+            }
+
+            document.getElementById('overlay').style.display = 'block';
+            const sheet = document.getElementById('daySheet');
+            sheet.style.display = 'flex';
+            setTimeout(() => sheet.classList.add('open'), 10);
+        }
+
+        function closeDaySheet() {
+            const sheet = document.getElementById('daySheet');
+            if (sheet.classList.contains('open')) {
+                sheet.classList.remove('open');
+                setTimeout(() => { sheet.style.display = 'none'; }, 250);
+            }
+            if(document.getElementById('eventModal').style.display !== 'block') {
+                document.getElementById('overlay').style.display = 'none';
+            }
+        }
+
+        function openRegisterModal(startStr, endStr) {
+            document.getElementById('editingEventId').value = '';
+            document.getElementById('btnDeleteModal').style.display = 'none';
+            document.getElementById('eventStart').value = startStr;
+            document.getElementById('eventEnd').value = endStr;
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('isShared').checked = true;
+            document.getElementById('isAllDay').checked = true;
+            toggleTimeFields();
+            filterModalLabels(false);
+            
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('eventModal').style.display = 'block';
+            setTimeout(() => document.getElementById('eventTitle').focus(), 50);
+            // 繰り返し設定を「なし」にリセット
+            document.getElementById('eventRecurrence').value = '';
+            document.getElementById('eventMemo').value = '';
+        }
+
+        function openEditModal(ev) {
+            document.getElementById('editingEventId').value = ev.extendedProps?.original_id || ev.id;
+            document.getElementById('btnDeleteModal').style.display = 'block';
+            document.getElementById('eventTitle').value = ev.title;
+            document.getElementById('isShared').checked = ev.extendedProps.is_shared;
+            document.getElementById('isAllDay').checked = ev.allDay;
+            document.getElementById('eventRecurrence').value = ev.extendedProps?.recurrence || '';
+            document.getElementById('eventMemo').value = ev.extendedProps?.memo || '';
+            
+            const startDateParts = ev.start.split('T');
+            document.getElementById('eventStart').value = startDateParts[0];
+            
+            let displayEndDate = ev.end ? ev.end.split('T')[0] : startDateParts[0];
+            if (ev.allDay && startDateParts[0] !== displayEndDate) {
+                displayEndDate = adjustEndDateForUI(displayEndDate, true);
+            }
+            document.getElementById('eventEnd').value = displayEndDate;
+            
+            if (!ev.allDay && startDateParts[1]) {
+                document.getElementById('startTime').value = startDateParts[1].substring(0, 5);
+                if (ev.end && ev.end.includes('T')) {
+                    document.getElementById('endTime').value = ev.end.split('T')[1].substring(0, 5);
+                }
+            } else {
+                document.getElementById('startTime').value = "09:00";
+                document.getElementById('endTime').value = "10:00";
+            }
+            
+            toggleTimeFields();
+            
+            const currentLabelId = ev.label_id || (ev.extendedProps && ev.extendedProps.label_id);
+            filterModalLabels(true, currentLabelId);
+            
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('eventModal').style.display = 'block';
+        }
+
+        function openRegisterFormFromSheet() { 
+            openRegisterModal(selectedDateStr, selectedDateStr);
+            // 繰り返し設定を「なし」にリセット
+            document.getElementById('eventRecurrence').value = '';
+        }
+
+        function closeRegisterModal() {
+            document.getElementById('eventModal').style.display = 'none';
+            if (calendar) { calendar.unselect(); }
+            if (!document.getElementById('daySheet').classList.contains('open')) {
+                document.getElementById('overlay').style.display = 'none';
+            }
+        }
+        function closeAllModals() { closeDaySheet(); closeRegisterModal(); }
+
+        function saveEvent() {
+            const titleVal = document.getElementById('eventTitle').value.trim();
+
+            if (!titleVal) {
+                alert('タイトルを入力してください。');
+                return;
+            }
+
+            const startDateVal = document.getElementById('eventStart').value;
+            const endDateVal = document.getElementById('eventEnd').value;
+
+            if (!startDateVal || !endDateVal) {
+                alert('日時を入力してください。');
+                return;
+            }
+
+            const isAllDay = document.getElementById('isAllDay').checked;
+
+            let startVal = startDateVal;
+            let endVal = endDateVal;
+
+            if (isAllDay) {
+                endVal = addDaysToDateStr(endDateVal, 1);
+            } else {
+                const startTimeVal = document.getElementById('startTime').value || '09:00';
+                const endTimeVal = document.getElementById('endTime').value || '10:00';
+
+                startVal = `${startDateVal}T${startTimeVal}:00`;
+                endVal = `${endDateVal}T${endTimeVal}:00`;
+            }
+
+            const isShared = document.getElementById('isShared').checked;
+            const labelIdVal = document.getElementById('eventLabelSelect').value || null;
+            const recurrenceVal = document.getElementById('eventRecurrence').value;
+            const memoVal = document.getElementById('eventMemo').value;
+
+            const payload = {
+                title: titleVal,
+                start: startVal,
+                end: endVal,
+                memo: memoVal,
+                allDay: isAllDay,
+                is_all_day: isAllDay,
+                label_id: labelIdVal,
+                is_shared: isShared,
+                recurrence: recurrenceVal
+            };
+
+            const eventId = document.getElementById('editingEventId').value;
+
+            const url = eventId
+                ? `/api/events/${eventId}`
+                : '/api/events';
+
+            const method = eventId
+                ? 'PUT'
+                : 'POST';
+
+            fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`サーバーエラー (Status: ${res.status})`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    closeRegisterModal();
+                    refreshEvents().then(() => {
+                        if (document.getElementById('daySheet').classList.contains('open') && selectedDateStr) {
+                            openDaySheet(selectedDateStr);
+                        }
+                    });
+                } else {
+                    alert('保存に失敗しました: ' + (data.error || '不明なエラー'));
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('通信エラーが発生しました。');
+            });
+        }
+
+        function deleteEventFromModal() {
+            const editingId = document.getElementById('editingEventId').value;
+            if (!editingId) return;
+            if (!confirm("この予定を削除しますか？")) return;
+
+            fetch(`/api/events/${editingId}`, { method: 'DELETE' })
+            .then(res => {
+                if (res.ok) {
+                    refreshEvents().then(() => {
+                        closeRegisterModal();
+                        if (document.getElementById('daySheet').classList.contains('open')) {
+                            openDaySheet(selectedDateStr);
+                        }
+                    });
+                } else {
+                    alert("サーバー側での削除に失敗しました。");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("通信エラーが発生しました。");
+            });
+        }
+
+        function refreshEvents() {
+            const rangeUrls = getCalendarRangeUrls();
+            currentDataRangeKey = rangeUrls.key;
+            return Promise.all([
+                fetchJsonWithCache(rangeUrls.holidays).then(value => ({ ok: true, value }), reason => ({ ok: false, reason })),
+                fetchJsonWithCache(rangeUrls.events).then(value => ({ ok: true, value }), reason => ({ ok: false, reason }))
+            ])
+            .then(([holidaysResult, eventsResult]) => {
+                if (!eventsResult.ok) {
+                    console.error("予定の更新に失敗しました:", eventsResult.reason);
+                    return;
+                }
+
+                const holidaysData = holidaysResult.ok ? holidaysResult.value : [];
+                if (!holidaysResult.ok) {
+                    console.error("祝日の更新に失敗しました:", holidaysResult.reason);
+                }
+                renderCalendarData(holidaysData, eventsResult.value);
+            });
+        }
+
+        function applyFilter() {
+            const filterValue = document.querySelector('input[name="viewFilter"]:checked').value;
+            const currentSources = calendar.getEventSources();
+            currentSources.forEach(source => { if (!source.url) { source.remove(); } });
+
+            // 1. 通常の予定をフィルター
+            const filteredEvents = allEvents.filter(event => {
+                if (filterValue === 'shared') { return event.extendedProps.is_shared === true; }
+                if (filterValue === 'private') { return event.extendedProps.is_shared === false; }
+                return true;
+            });
+
+            // ダークモード状態に応じて祝日データの適用色を動的に変更する
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            const holidayColor = isDarkMode ? '#b31412' : '#d93025';
+            
+            const updatedHolidays = cachedHolidays.map(h => {
+                return { 
+                    ...h, 
+                    color: holidayColor,
+                    backgroundColor: holidayColor
+                };
+            });
+
+
+            // 2. 祝日データを合流させた1つの共通の配列（イベントソース）を作成して供給
+            // 祝日は選択されているフィルター（すべて表示、共有、個人）に関わらず、常に合流させます
+            let combinedSources = [];
+            combinedSources = expandMultiDayAllDayEvents(filteredEvents).concat(updatedHolidays);
+            calendar.addEventSource(combinedSources);
+        }
+
+        function deleteAllEvents() {
+            if (!confirm("すべての予定を削除しますか？\nこの操作は取り消せません。")) return;
+            if (!confirm("本当に本当によろしいですか？\n（あなたに閲覧権限のあるすべての予定データが消去されます）")) return;
+
+            fetch('/api/events/clear', { method: 'DELETE' })
+            .then(res => {
+                if (!res.ok) { throw new Error(`サーバーエラー (Status: ${res.status})`); }
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert("すべての予定を削除しました。");
+                    toggleDrawer(false);
+                    refreshEvents();
+                } else {
+                    alert("削除に失敗しました: " + (data.error || "不明なエラー"));
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("一括削除処理中にエラーが発生しました。");
+            });
+        }
+
+        window.addEventListener('online', () => {
+            setOfflineStatus(false);
+            if (currentUser) refreshEvents();
+        });
+        window.addEventListener('offline', () => setOfflineStatus(true));
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+                    .catch(error => console.warn('Service Worker registration failed:', error));
+            });
+        }
+    </script>
+</body>
+</html>
+
