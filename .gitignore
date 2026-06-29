@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+
+database.db
+calendar_files/*.ics
+app copy.py
+templates/* copy.html
+static/* copy.js
+
+.env
+.venv/
+venv/
