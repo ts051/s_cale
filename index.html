@@ -650,6 +650,10 @@
             min-height: 10px;
             background: var(--multi-day-segment-color) !important;
         }
+        .fc .multi-day-segment .fc-event-main-frame {
+            min-height: 10px;
+            background: var(--multi-day-segment-color) !important;
+        }
 
         /* 祝日のデザイン設定：他の終日予定の枠組と完全一致（アクセント線なし、濃い赤背景、白文字） */
         .fc-event-holiday {
@@ -1077,8 +1081,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="static/supabase-config.js?v=multi-day-band-1"></script>
-    <script src="static/local-api.js?v=multi-day-band-1"></script>
+    <script src="static/supabase-config.js?v=multi-day-band-2"></script>
+    <script src="static/local-api.js?v=multi-day-band-2"></script>
     <script>
         let calendar;
         let allEvents = [];
@@ -1473,7 +1477,7 @@
             const expanded = [];
 
             events.forEach(event => {
-                if (!event.allDay || !event.start || !event.end) {
+                if (!event.start || !event.end) {
                     expanded.push(event);
                     return;
                 }
@@ -1482,15 +1486,16 @@
                 const endDate = event.end.split('T')[0];
                 const secondDay = addDaysToDateStr(startDate, 1);
 
-                if (endDate <= secondDay) {
+                if (event.allDay ? endDate <= secondDay : endDate <= startDate) {
                     expanded.push(event);
                     return;
                 }
 
                 let currentDate = startDate;
                 let index = 0;
-                const totalSegments = Math.max(1, Math.round((new Date(endDate) - new Date(startDate)) / 86400000));
-                while (currentDate < endDate) {
+                const visualEndDate = event.allDay ? endDate : addDaysToDateStr(endDate, 1);
+                const totalSegments = Math.max(1, Math.round((new Date(visualEndDate) - new Date(startDate)) / 86400000));
+                while (currentDate < visualEndDate) {
                     const segmentClasses = ['multi-day-segment'];
                     if (index === 0) {
                         segmentClasses.push('multi-day-segment-start');
@@ -1517,7 +1522,8 @@
                             ...(event.extendedProps || {}),
                             original_id: event.extendedProps?.original_id || event.id,
                             multi_day_segment_index: index,
-                            multi_day_segment_total: totalSegments
+                            multi_day_segment_total: totalSegments,
+                            multi_day_segment_classes: segmentClasses
                         }
                     });
                     currentDate = addDaysToDateStr(currentDate, 1);
@@ -1849,7 +1855,7 @@
 
                 eventClassNames: function(arg) {
                     if (arg.event.extendedProps.is_holiday) return ['fc-event-holiday'];
-                    const classes = [...(arg.event.classNames || [])];
+                    const classes = [...(arg.event.extendedProps?.multi_day_segment_classes || [])];
                     if (arg.event.allDay) classes.push('fc-event-forced-all-day');
                     return classes;
                 },
