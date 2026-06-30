@@ -658,6 +658,13 @@
             z-index: 3;
             background: var(--multi-day-segment-color) !important;
         }
+        .fc .multi-day-lane-spacer {
+            visibility: hidden !important;
+            pointer-events: none !important;
+            min-height: 11px !important;
+            margin-left: 2px !important;
+            margin-right: 2px !important;
+        }
 
         /* 祝日のデザイン設定：他の終日予定の枠組と完全一致（アクセント線なし、濃い赤背景、白文字） */
         .fc-event-holiday {
@@ -1482,9 +1489,7 @@
 
         function expandMultiDayAllDayEvents(events) {
             const expanded = [];
-
-            const multiDayLaneById = new Map();
-            let nextMultiDayLane = 1;
+            const multiDayEvents = [];
 
             events.forEach(event => {
                 if (!event.start || !event.end) {
@@ -1501,16 +1506,36 @@
                     return;
                 }
 
-                let currentDate = startDate;
-                let index = 0;
-                const originalId = event.extendedProps?.original_id || event.id;
-                if (!multiDayLaneById.has(originalId)) {
-                    multiDayLaneById.set(originalId, nextMultiDayLane);
-                    nextMultiDayLane += 1;
-                }
-                const lane = multiDayLaneById.get(originalId);
                 const visualEndDate = event.allDay ? endDate : addDaysToDateStr(endDate, 1);
                 const totalSegments = Math.max(1, Math.round((new Date(visualEndDate) - new Date(startDate)) / 86400000));
+                multiDayEvents.push({ event, startDate, visualEndDate, totalSegments });
+            });
+
+            multiDayEvents.sort((a, b) => {
+                if (a.startDate !== b.startDate) return a.startDate < b.startDate ? -1 : 1;
+                if (a.visualEndDate !== b.visualEndDate) return a.visualEndDate > b.visualEndDate ? -1 : 1;
+                const aLabelOrder = a.event.extendedProps?.label_order || 999;
+                const bLabelOrder = b.event.extendedProps?.label_order || 999;
+                if (aLabelOrder !== bLabelOrder) return aLabelOrder - bLabelOrder;
+                return String(a.event.title || '').localeCompare(String(b.event.title || ''), 'ja');
+            });
+
+            const laneEndDates = [];
+            const usedLanesByDate = new Map();
+
+            multiDayEvents.forEach(({ event, startDate, visualEndDate, totalSegments }) => {
+                let laneIndex = laneEndDates.findIndex(endDate => endDate <= startDate);
+                if (laneIndex === -1) {
+                    laneEndDates.push(visualEndDate);
+                    laneIndex = laneEndDates.length - 1;
+                } else {
+                    laneEndDates[laneIndex] = visualEndDate;
+                }
+
+                const lane = laneIndex + 1;
+                let currentDate = startDate;
+                let index = 0;
+
                 while (currentDate < visualEndDate) {
                     const segmentClasses = ['multi-day-segment'];
                     if (index === 0) {
@@ -1523,6 +1548,11 @@
                     } else if (index > 0) {
                         segmentClasses.push('multi-day-segment-middle');
                     }
+
+                    if (!usedLanesByDate.has(currentDate)) {
+                        usedLanesByDate.set(currentDate, new Set());
+                    }
+                    usedLanesByDate.get(currentDate).add(lane);
 
                     expanded.push({
                         ...event,
@@ -1545,6 +1575,34 @@
                     });
                     currentDate = addDaysToDateStr(currentDate, 1);
                     index += 1;
+                }
+            });
+
+            usedLanesByDate.forEach((usedLanes, date) => {
+                const maxLane = Math.max(...usedLanes);
+                for (let lane = 1; lane <= maxLane; lane += 1) {
+                    if (usedLanes.has(lane)) continue;
+                    expanded.push({
+                        id: `multi-day-lane-spacer-${date}-${lane}`,
+                        title: '',
+                        start: date,
+                        end: addDaysToDateStr(date, 1),
+                        allDay: true,
+                        display: 'block',
+                        backgroundColor: 'transparent',
+                        borderColor: 'transparent',
+                        textColor: 'transparent',
+                        className: 'multi-day-lane-spacer',
+                        classNames: ['multi-day-lane-spacer'],
+                        extendedProps: {
+                            is_lane_spacer: true,
+                            is_holiday: 0,
+                            is_mine: false,
+                            is_shared: true,
+                            label_order: 0,
+                            multi_day_lane: lane
+                        }
+                    });
                 }
             });
 
@@ -1884,6 +1942,7 @@
                     if (a.start !== b.start) { return a.start < b.start ? -1 : 1; }
                     return a.title.localeCompare(b.title, 'ja');
                 },
+                eventOrderStrict: true,
 
                 customButtons: {
                     menuButton: {
