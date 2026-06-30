@@ -136,6 +136,31 @@
     return new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
   }
 
+  function compareDateTimeText(a, b) {
+    return String(a || '').localeCompare(String(b || ''));
+  }
+
+  function isEventInRange(row, searchParams) {
+    const startLimit = searchParams.get('start');
+    const endLimit = searchParams.get('end');
+    if (!startLimit || !endLimit || row.recurrence) return true;
+    const startTime = row.start_time || '';
+    const endTime = row.end_time || row.start_time || '';
+    return compareDateTimeText(startTime, endLimit) <= 0 && compareDateTimeText(endTime, startLimit) >= 0;
+  }
+
+  function buildEventsFilter(userId, searchParams) {
+    const startLimit = searchParams.get('start');
+    const endLimit = searchParams.get('end');
+    if (!startLimit || !endLimit) return `is_shared.eq.true,owner_id.eq.${userId}`;
+    return [
+      'and(is_shared.eq.true,recurrence.not.is.null)',
+      `and(owner_id.eq.${userId},recurrence.not.is.null)`,
+      `and(is_shared.eq.true,start_time.lte.${endLimit},end_time.gte.${startLimit})`,
+      `and(owner_id.eq.${userId},start_time.lte.${endLimit},end_time.gte.${startLimit})`
+    ].join(',');
+  }
+
   function formatDateTime(date, hasTime) {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -262,12 +287,13 @@
       .select('id, color, sort_order');
     if (labelError) throw labelError;
 
+    const eventsFilter = buildEventsFilter(user.id, searchParams);
     const rows = await selectAll(() => client
-      .from('events')
-      .select('id, owner_id, title, start_time, end_time, is_shared, is_all_day, label_id, recurrence, memo')
-      .or(`is_shared.eq.true,owner_id.eq.${user.id}`)
-      .order('id', { ascending: true }));
-    return expandRecurrence(rows, user.id, labels, searchParams);
+        .from('events')
+        .select('id, owner_id, title, start_time, end_time, is_shared, is_all_day, label_id, recurrence, memo')
+        .or(eventsFilter)
+        .order('id', { ascending: true }));
+    return expandRecurrence(rows.filter(row => isEventInRange(row, searchParams)), user.id, labels, searchParams);
   }
 
   function escapeIcs(value) {
