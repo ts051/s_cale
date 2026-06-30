@@ -241,17 +241,32 @@
     }));
   }
 
+  async function selectAll(buildQuery, pageSize = 1000) {
+    const rows = [];
+    let from = 0;
+
+    while (true) {
+      const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+      if (error) throw error;
+      rows.push(...(data || []));
+      if (!data || data.length < pageSize) break;
+      from += pageSize;
+    }
+
+    return rows;
+  }
+
   async function fetchEvents(user, searchParams) {
     const { data: labels, error: labelError } = await client
       .from('labels')
       .select('id, color, sort_order');
     if (labelError) throw labelError;
 
-    const { data: rows, error } = await client
+    const rows = await selectAll(() => client
       .from('events')
       .select('id, owner_id, title, start_time, end_time, is_shared, is_all_day, label_id, recurrence, memo')
-      .or(`is_shared.eq.true,owner_id.eq.${user.id}`);
-    if (error) throw error;
+      .or(`is_shared.eq.true,owner_id.eq.${user.id}`)
+      .order('id', { ascending: true }));
     return expandRecurrence(rows, user.id, labels, searchParams);
   }
 
@@ -301,11 +316,11 @@
   window.exportICSFile = async function () {
     try {
       const user = await requireUser();
-      const { data: rows, error } = await client
+      const rows = await selectAll(() => client
         .from('events')
         .select('id, title, start_time, end_time, is_shared, is_all_day, label_id, recurrence, memo')
-        .or(`is_shared.eq.true,owner_id.eq.${user.id}`);
-      if (error) throw error;
+        .or(`is_shared.eq.true,owner_id.eq.${user.id}`)
+        .order('id', { ascending: true }));
 
       const { data: labels, error: labelError } = await client.from('labels').select('id, name');
       if (labelError) throw labelError;
@@ -541,11 +556,11 @@
       }
 
       if (path === '/api/events/clear' && method === 'DELETE') {
-        const { data: rows, error } = await client
+        const rows = await selectAll(() => client
           .from('events')
           .select('id')
-          .or(`is_shared.eq.true,owner_id.eq.${user.id}`);
-        if (error) throw error;
+          .or(`is_shared.eq.true,owner_id.eq.${user.id}`)
+          .order('id', { ascending: true }));
         const ids = rows.map(row => row.id);
         if (ids.length > 0) {
           const { error: deleteError } = await client.from('events').delete().in('id', ids);
