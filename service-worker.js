@@ -1,7 +1,7 @@
-const CACHE_VERSION = 'whitetree-shell-v25';
+const CACHE_VERSION = 'whitetree-shell-v26';
 const APP_SHELL = [
   './',
-  './static/manifest.webmanifest',
+  './static/manifest.webmanifest?v=pwa-start-1',
   './static/supabase-config.js?v=range-cache-1',
   './static/local-api.js?v=range-cache-1',
   './static/icons/icon-192.png',
