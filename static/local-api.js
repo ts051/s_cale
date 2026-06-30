@@ -29,13 +29,16 @@
     return {};
   }
 
-  function usernameToEmail(username) {
-    const safe = String(username || 'user')
+  function normalizeUsername(username) {
+    return String(username || '')
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9._+-]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'user';
-    return `${safe}@whitetree.local`;
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function usernameToEmail(username) {
+    return `${normalizeUsername(username) || 'user'}@whitetree.local`;
   }
 
   async function getSessionUser() {
@@ -469,8 +472,11 @@
 
       if (path === '/api/login' && method === 'POST') {
         const data = await bodyJson(input, init);
-        const username = String(data.username || '').trim();
+        const username = normalizeUsername(data.username);
         const password = String(data.password || '');
+        if (!username) {
+          return jsonResponse({ success: false, error: 'ユーザー名を入力してください。' });
+        }
         const email = usernameToEmail(username);
         const result = await client.auth.signInWithPassword({ email, password });
         if (result.error) {
@@ -492,17 +498,29 @@
 
       if (path === '/api/settings' && method === 'PUT') {
         const data = await bodyJson(input, init);
-        const username = String(data.username || '').trim();
+        const username = normalizeUsername(data.username);
         const password = String(data.password || '');
-        if (username) {
-          const { error } = await client.from('profiles').update({ username }).eq('id', user.id);
-          if (error) throw error;
+        if (!username) {
+          return jsonResponse({ success: false, error: 'ユーザー名は英数字で入力してください。' });
+        }
+        const updates = {};
+        const email = usernameToEmail(username);
+        if (user.email !== email) {
+          updates.email = email;
         }
         if (password) {
-          const { error } = await client.auth.updateUser({ password });
-          if (error) throw error;
+          updates.password = password;
         }
-        return jsonResponse({ success: true });
+        if (Object.keys(updates).length > 0) {
+          const { data: updatedAuth, error } = await client.auth.updateUser(updates);
+          if (error) throw error;
+          if (updates.email && updatedAuth?.user?.email !== email) {
+            throw new Error('ユーザー名の変更が確認待ちになりました。Supabase Authのメール変更確認を無効にしてから再度保存してください。');
+          }
+        }
+        const { error } = await client.from('profiles').update({ username }).eq('id', user.id);
+        if (error) throw error;
+        return jsonResponse({ success: true, username });
       }
 
       if (path === '/api/preferences' && method === 'PUT') {

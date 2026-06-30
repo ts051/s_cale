@@ -1085,8 +1085,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="static/supabase-config.js?v=range-cache-1"></script>
-    <script src="static/local-api.js?v=range-cache-1"></script>
+    <script src="static/supabase-config.js?v=account-name-2"></script>
+    <script src="static/local-api.js?v=account-name-2"></script>
     <script>
         let calendar;
         let allEvents = [];
@@ -1385,6 +1385,12 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
+                    if (data.username && currentUser) {
+                        currentUser.username = data.username;
+                        localStorage.setItem('whiteTree:lastUser', JSON.stringify(currentUser));
+                        document.getElementById('drawerUserInfo').innerText = data.username;
+                        document.getElementById('settingsUsername').value = data.username;
+                    }
                     const flashContainer = document.getElementById('successFlashContainer');
                     flashContainer.innerHTML = '<div class="flash-success">アカウント情報を更新しました。</div>';
                     setTimeout(() => { flashContainer.innerHTML = ''; }, 4000);
