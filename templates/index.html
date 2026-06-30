@@ -599,12 +599,12 @@
             position: relative !important;
             z-index: 20 !important;
             border-radius: 0 !important;
-            margin-left: -4px !important;
-            margin-right: -4px !important;
-            width: calc(100% + 8px) !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 100% !important;
             min-height: 11px !important;
             background-color: var(--multi-day-segment-color) !important;
-            box-shadow: 4px 0 0 var(--multi-day-segment-color), -4px 0 0 var(--multi-day-segment-color);
+            box-shadow: none !important;
             overflow: visible !important;
         }
         .fc .multi-day-segment::before {
@@ -612,18 +612,24 @@
             position: absolute;
             top: 0;
             bottom: 0;
-            left: -4px;
-            right: -4px;
+            left: 0;
+            right: 0;
             z-index: -1;
             background: var(--multi-day-segment-color);
             pointer-events: none;
+        }
+        .fc .multi-day-segment:not(.multi-day-segment-start)::before {
+            left: -4px;
+        }
+        .fc .multi-day-segment:not(.multi-day-segment-end)::before {
+            right: -4px;
         }
         .fc .multi-day-segment-start {
             border-top-left-radius: 3px !important;
             border-bottom-left-radius: 3px !important;
             margin-left: 0 !important;
-            width: calc(100% + 4px) !important;
-            box-shadow: 4px 0 0 var(--multi-day-segment-color);
+            width: 100% !important;
+            box-shadow: none !important;
         }
         .fc .multi-day-segment-start::before {
             left: 0;
@@ -634,8 +640,8 @@
             border-top-right-radius: 3px !important;
             border-bottom-right-radius: 3px !important;
             margin-right: 0 !important;
-            width: calc(100% + 4px) !important;
-            box-shadow: -4px 0 0 var(--multi-day-segment-color);
+            width: 100% !important;
+            box-shadow: none !important;
         }
         .fc .multi-day-segment-end::before {
             right: 0;
