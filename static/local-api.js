@@ -143,6 +143,118 @@
     return String(a || '').localeCompare(String(b || ''));
   }
 
+  function formatDateOnly(year, month, day) {
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
+  function addDaysText(dateText, days) {
+    const [year, month, day] = dateText.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    date.setDate(date.getDate() + days);
+    return formatDateOnly(date.getFullYear(), date.getMonth() + 1, date.getDate());
+  }
+
+  function dayOfWeek(dateText) {
+    const [year, month, day] = dateText.split('-').map(Number);
+    return new Date(year, month - 1, day).getDay();
+  }
+
+  function nthMonday(year, month, nth) {
+    const first = new Date(year, month - 1, 1);
+    const offset = (8 - first.getDay()) % 7;
+    return 1 + offset + (nth - 1) * 7;
+  }
+
+  function vernalEquinoxDay(year) {
+    return Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+  }
+
+  function autumnalEquinoxDay(year) {
+    return Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+  }
+
+  function addHoliday(holidayMap, year, month, day, title) {
+    holidayMap.set(formatDateOnly(year, month, day), title);
+  }
+
+  function buildJapanHolidayMap(year) {
+    const holidays = new Map();
+
+    addHoliday(holidays, year, 1, 1, '元日');
+    addHoliday(holidays, year, 1, nthMonday(year, 1, 2), '成人の日');
+    addHoliday(holidays, year, 2, 11, '建国記念の日');
+    addHoliday(holidays, year, 2, 23, '天皇誕生日');
+    addHoliday(holidays, year, 3, vernalEquinoxDay(year), '春分の日');
+    addHoliday(holidays, year, 4, 29, '昭和の日');
+    addHoliday(holidays, year, 5, 3, '憲法記念日');
+    addHoliday(holidays, year, 5, 4, 'みどりの日');
+    addHoliday(holidays, year, 5, 5, 'こどもの日');
+    addHoliday(holidays, year, 7, nthMonday(year, 7, 3), '海の日');
+    addHoliday(holidays, year, 8, 11, '山の日');
+    addHoliday(holidays, year, 9, nthMonday(year, 9, 3), '敬老の日');
+    addHoliday(holidays, year, 9, autumnalEquinoxDay(year), '秋分の日');
+    addHoliday(holidays, year, 10, nthMonday(year, 10, 2), 'スポーツの日');
+    addHoliday(holidays, year, 11, 3, '文化の日');
+    addHoliday(holidays, year, 11, 23, '勤労感謝の日');
+
+    Array.from(holidays.keys()).sort().forEach(dateText => {
+      if (dayOfWeek(dateText) !== 0) return;
+      let substitute = addDaysText(dateText, 1);
+      while (holidays.has(substitute)) {
+        substitute = addDaysText(substitute, 1);
+      }
+      holidays.set(substitute, '振替休日');
+    });
+
+    const dates = Array.from(holidays.keys()).sort();
+    for (let i = 0; i < dates.length - 1; i += 1) {
+      const current = dates[i];
+      const next = dates[i + 1];
+      if (addDaysText(current, 2) === next) {
+        const between = addDaysText(current, 1);
+        if (!holidays.has(between) && dayOfWeek(between) !== 0) {
+          holidays.set(between, '国民の休日');
+        }
+      }
+    }
+
+    return holidays;
+  }
+
+  function getJapanHolidays(searchParams) {
+    const now = new Date();
+    const years = new Set([now.getFullYear()]);
+    const startLimit = searchParams.get('start');
+    const endLimit = searchParams.get('end');
+
+    [startLimit, endLimit].forEach(value => {
+      const year = Number(String(value || '').slice(0, 4));
+      if (Number.isFinite(year)) years.add(year);
+    });
+
+    const output = [];
+    years.forEach(year => {
+      buildJapanHolidayMap(year).forEach((title, dateText) => {
+        if (startLimit && dateText < startLimit) return;
+        if (endLimit && dateText >= endLimit) return;
+        output.push({
+          title,
+          start: dateText,
+          display: 'block',
+          color: 'transparent',
+          textColor: '#d93025',
+          className: 'fc-event-holiday',
+          allDay: true,
+          extendedProps: {
+            is_holiday: 1
+          }
+        });
+      });
+    });
+
+    return output.sort((a, b) => a.start.localeCompare(b.start));
+  }
+
   function isEventInRange(row, searchParams) {
     const startLimit = searchParams.get('start');
     const endLimit = searchParams.get('end');
@@ -466,6 +578,10 @@
         return jsonResponse(await currentProfileResponse());
       }
 
+      if (path === '/api/holidays' && method === 'GET') {
+        return jsonResponse(getJapanHolidays(url.searchParams));
+      }
+
       if (!isConfigured) {
         return jsonResponse({ error: 'Supabase is not configured. Set docs/static/supabase-config.js.' }, 503);
       }
@@ -571,10 +687,6 @@
           .eq('id', Number(labelMatch[1]));
         if (error) throw error;
         return jsonResponse({ success: true });
-      }
-
-      if (path === '/api/holidays' && method === 'GET') {
-        return jsonResponse([]);
       }
 
       if (path === '/api/events' && method === 'GET') {
