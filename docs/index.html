@@ -1085,8 +1085,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="static/supabase-config.js?v=multi-day-align-3"></script>
-    <script src="static/local-api.js?v=multi-day-align-3"></script>
+    <script src="static/supabase-config.js?v=range-cache-1"></script>
+    <script src="static/local-api.js?v=range-cache-1"></script>
     <script>
         let calendar;
         let allEvents = [];
@@ -1141,7 +1141,7 @@
         }
 
         function dataCacheKey(url) {
-            return `whiteTree:data:v2:${getUserCacheIdentity(currentUser)}:${url}`;
+            return `whiteTree:data:v3:${getUserCacheIdentity(currentUser)}:${url}`;
         }
 
         function toDateParam(date) {
