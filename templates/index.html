@@ -1473,6 +1473,9 @@
         function expandMultiDayAllDayEvents(events) {
             const expanded = [];
 
+            const multiDayLaneById = new Map();
+            let nextMultiDayLane = 1;
+
             events.forEach(event => {
                 if (!event.start || !event.end) {
                     expanded.push(event);
@@ -1490,6 +1493,12 @@
 
                 let currentDate = startDate;
                 let index = 0;
+                const originalId = event.extendedProps?.original_id || event.id;
+                if (!multiDayLaneById.has(originalId)) {
+                    multiDayLaneById.set(originalId, nextMultiDayLane);
+                    nextMultiDayLane += 1;
+                }
+                const lane = multiDayLaneById.get(originalId);
                 const visualEndDate = event.allDay ? endDate : addDaysToDateStr(endDate, 1);
                 const totalSegments = Math.max(1, Math.round((new Date(visualEndDate) - new Date(startDate)) / 86400000));
                 while (currentDate < visualEndDate) {
@@ -1520,7 +1529,8 @@
                             original_id: event.extendedProps?.original_id || event.id,
                             multi_day_segment_index: index,
                             multi_day_segment_total: totalSegments,
-                            multi_day_segment_classes: segmentClasses
+                            multi_day_segment_classes: segmentClasses,
+                            multi_day_lane: lane
                         }
                     });
                     currentDate = addDaysToDateStr(currentDate, 1);
@@ -1850,6 +1860,13 @@
                     let aHoliday = a.extendedProps?.is_holiday || 0;
                     let bHoliday = b.extendedProps?.is_holiday || 0;
                     if (aHoliday !== bHoliday) { return bHoliday - aHoliday; }
+                    const aLane = a.extendedProps?.multi_day_lane || 0;
+                    const bLane = b.extendedProps?.multi_day_lane || 0;
+                    if (aLane || bLane) {
+                        if (!aLane) return 1;
+                        if (!bLane) return -1;
+                        if (aLane !== bLane) return aLane - bLane;
+                    }
                     if (a.allDay !== b.allDay) { return a.allDay ? -1 : 1; }
                     const aLabelOrder = a.extendedProps?.label_order || 999;
                     const bLabelOrder = b.extendedProps?.label_order || 999;
