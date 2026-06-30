@@ -1,30 +1,14 @@
 (function () {
-  const STORE_KEY = 'whiteTree:static:v1';
-  const SESSION_KEY = 'whiteTree:static:session';
   const COLORS = ['#1aa260', '#e67c73', '#f4511e', '#1a73e8', '#8e24aa', '#f6bf26', '#039be5', '#33b679', '#0b8043', '#3f51b5'];
+  const config = window.WHITE_TREE_SUPABASE || {};
+  const nativeFetch = window.fetch.bind(window);
+  const isConfigured = !!(config.url && config.anonKey && window.supabase);
+  const client = isConfigured ? window.supabase.createClient(config.url, config.anonKey) : null;
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register = function () {
       return Promise.resolve({ scope: location.href });
     };
-  }
-
-  function readStore() {
-    const fallback = { users: [], labels: [], events: [], nextUserId: 1, nextLabelId: 1, nextEventId: 1 };
-    try {
-      return Object.assign(fallback, JSON.parse(localStorage.getItem(STORE_KEY) || '{}'));
-    } catch (error) {
-      return fallback;
-    }
-  }
-
-  function writeStore(store) {
-    localStorage.setItem(STORE_KEY, JSON.stringify(store));
-  }
-
-  function currentUser(store) {
-    const userId = Number(localStorage.getItem(SESSION_KEY));
-    return store.users.find(user => user.id === userId) || null;
   }
 
   function jsonResponse(data, status) {
@@ -39,60 +23,107 @@
     return `${url.pathname}${url.search}`.replace(/^\/[^/]+\/api\//, '/api/');
   }
 
-  function ensureLabels(store, userId) {
-    const hasShared = store.labels.some(label => label.is_shared);
+  async function bodyJson(input, init) {
+    if (init?.body) return JSON.parse(init.body);
+    if (typeof input !== 'string' && input.body) return JSON.parse(await input.text());
+    return {};
+  }
+
+  function usernameToEmail(username) {
+    const safe = String(username || 'user')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._+-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'user';
+    return `${safe}@whitetree.local`;
+  }
+
+  async function getSessionUser() {
+    if (!client) return null;
+    const { data, error } = await client.auth.getSession();
+    if (error) throw error;
+    return data.session?.user || null;
+  }
+
+  async function getProfile(user) {
+    const { data, error } = await client
+      .from('profiles')
+      .select('id, username, week_start')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
+  async function ensureProfile(user, username) {
+    let profile = await getProfile(user);
+    if (profile) return profile;
+
+    const nextProfile = {
+      id: user.id,
+      username: username || user.email?.split('@')[0] || 'user',
+      week_start: 1
+    };
+    const { data, error } = await client
+      .from('profiles')
+      .insert(nextProfile)
+      .select('id, username, week_start')
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async function currentProfileResponse() {
+    if (!isConfigured) {
+      return { logged_in: false, error: 'Supabase is not configured.' };
+    }
+    const user = await getSessionUser();
+    if (!user) return { logged_in: false };
+    const profile = await ensureProfile(user);
+    await ensureDefaultLabels(user.id);
+    return {
+      logged_in: true,
+      user_id: user.id,
+      username: profile.username,
+      week_start: profile.week_start === 0 ? 0 : 1
+    };
+  }
+
+  async function ensureDefaultLabels(userId) {
+    const { data: labels, error } = await client
+      .from('labels')
+      .select('id, is_shared, owner_id')
+      .or(`is_shared.eq.true,owner_id.eq.${userId}`);
+    if (error) throw error;
+
+    const hasShared = labels.some(label => label.is_shared);
+    const hasPrivate = labels.some(label => !label.is_shared && label.owner_id === userId);
+    const rows = [];
+
     if (!hasShared) {
       for (let i = 1; i <= 10; i += 1) {
-        store.labels.push({
-          id: store.nextLabelId++,
-          user_id: 0,
-          name: `ラベル${i}`,
-          color: COLORS[i - 1],
-          is_shared: true,
-          sort_order: i
-        });
+        rows.push({ owner_id: null, name: `ラベル${i}`, color: COLORS[i - 1], is_shared: true, sort_order: i });
       }
     }
 
-    const hasPrivate = store.labels.some(label => !label.is_shared && label.user_id === userId);
     if (!hasPrivate) {
       for (let i = 1; i <= 10; i += 1) {
-        store.labels.push({
-          id: store.nextLabelId++,
-          user_id: userId,
-          name: `ラベル${i}`,
-          color: COLORS[i - 1],
-          is_shared: false,
-          sort_order: i
-        });
+        rows.push({ owner_id: userId, name: `ラベル${i}`, color: COLORS[i - 1], is_shared: false, sort_order: i });
       }
+    }
+
+    if (rows.length > 0) {
+      const { error: insertError } = await client.from('labels').insert(rows);
+      if (insertError && insertError.code !== '23505') throw insertError;
     }
   }
 
-  function eventForCalendar(row, userId, labels) {
-    const label = labels.find(item => Number(item.id) === Number(row.label_id));
-    const color = label?.color || (row.is_shared ? '#1aa260' : '#1a73e8');
-    return {
-      id: row.id,
-      title: row.title,
-      start: row.start,
-      end: row.end,
-      allDay: !!row.allDay,
-      backgroundColor: color,
-      borderColor: color,
-      textColor: '#ffffff',
-      color,
-      extendedProps: {
-        original_id: row.id,
-        is_shared: !!row.is_shared,
-        is_mine: row.user_id === userId,
-        label_id: row.label_id || null,
-        label_order: label?.sort_order || 999,
-        recurrence: row.recurrence || null,
-        memo: row.memo || '',
-        is_holiday: 0
-      }
-    };
+  function addRecurrenceDate(date, recurrence) {
+    const next = new Date(date.getTime());
+    if (recurrence === 'weekly') next.setDate(next.getDate() + 7);
+    if (recurrence === 'monthly') next.setMonth(next.getMonth() + 1);
+    if (recurrence === 'yearly') next.setFullYear(next.getFullYear() + 1);
+    return next;
   }
 
   function parseDateTime(value) {
@@ -116,36 +147,53 @@
     return `${y}-${m}-${d}T${hh}:${mm}:${ss}`;
   }
 
-  function addRecurrenceDate(date, recurrence) {
-    const next = new Date(date.getTime());
-    if (recurrence === 'weekly') next.setDate(next.getDate() + 7);
-    if (recurrence === 'monthly') next.setMonth(next.getMonth() + 1);
-    if (recurrence === 'yearly') next.setFullYear(next.getFullYear() + 1);
-    return next;
+  function toCalendarEvent(row, userId, labels) {
+    const label = labels.find(item => Number(item.id) === Number(row.label_id));
+    const color = label?.color || (row.is_shared ? '#1aa260' : '#1a73e8');
+    return {
+      id: row.id,
+      title: row.title,
+      start: row.start_time,
+      end: row.end_time,
+      allDay: !!row.is_all_day,
+      backgroundColor: color,
+      borderColor: color,
+      textColor: '#ffffff',
+      color,
+      extendedProps: {
+        original_id: row.id,
+        is_shared: !!row.is_shared,
+        is_mine: row.owner_id === userId,
+        label_id: row.label_id,
+        label_order: label?.sort_order || 999,
+        recurrence: row.recurrence || null,
+        memo: row.memo || '',
+        is_holiday: 0
+      }
+    };
   }
 
-  function calendarEvents(store, user, searchParams) {
+  function expandRecurrence(rows, userId, labels, searchParams) {
     const startLimit = parseDateTime(searchParams.get('start')) || new Date(new Date().getFullYear() - 1, 0, 1);
     const endLimit = parseDateTime(searchParams.get('end')) || new Date(new Date().getFullYear() + 1, 11, 31);
-    const visible = store.events.filter(event => event.is_shared || event.user_id === user.id);
     const output = [];
 
-    visible.forEach(row => {
-      const base = eventForCalendar(row, user.id, store.labels);
+    rows.forEach(row => {
+      const base = toCalendarEvent(row, userId, labels);
       if (!row.recurrence) {
         output.push(base);
         return;
       }
 
-      const start = parseDateTime(row.start);
-      const end = parseDateTime(row.end);
+      const start = parseDateTime(row.start_time);
+      const end = parseDateTime(row.end_time);
       if (!start || !end) {
         output.push(base);
         return;
       }
 
       const duration = end.getTime() - start.getTime();
-      const hasTime = row.start.includes('T');
+      const hasTime = row.start_time.includes('T');
       let current = new Date(start.getTime());
       let guard = 0;
       while (current <= endLimit && guard < 1000) {
@@ -162,6 +210,49 @@
     });
 
     return output;
+  }
+
+  async function requireUser() {
+    if (!isConfigured) {
+      throw new Error('Supabase is not configured. Set docs/static/supabase-config.js.');
+    }
+    const user = await getSessionUser();
+    if (!user) throw new Error('Unauthorized');
+    await ensureDefaultLabels(user.id);
+    return user;
+  }
+
+  async function fetchLabels(userId) {
+    const { data, error } = await client
+      .from('labels')
+      .select('id, owner_id, name, color, is_shared, sort_order')
+      .or(`is_shared.eq.true,owner_id.eq.${userId}`)
+      .order('is_shared', { ascending: false })
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true });
+    if (error) throw error;
+    return data.map(label => ({
+      id: label.id,
+      user_id: label.owner_id,
+      name: label.name,
+      color: label.color,
+      is_shared: label.is_shared,
+      sort_order: label.sort_order
+    }));
+  }
+
+  async function fetchEvents(user, searchParams) {
+    const { data: labels, error: labelError } = await client
+      .from('labels')
+      .select('id, color, sort_order');
+    if (labelError) throw labelError;
+
+    const { data: rows, error } = await client
+      .from('events')
+      .select('id, owner_id, title, start_time, end_time, is_shared, is_all_day, label_id, recurrence, memo')
+      .or(`is_shared.eq.true,owner_id.eq.${user.id}`);
+    if (error) throw error;
+    return expandRecurrence(rows, user.id, labels, searchParams);
   }
 
   function escapeIcs(value) {
@@ -183,7 +274,7 @@
   function toIcsDate(value, allDay) {
     if (!value) return '';
     if (allDay) return value.split('T')[0].replaceAll('-', '');
-    return value.replaceAll('-', '').replaceAll(':', '').replace('T', 'T');
+    return value.replaceAll('-', '').replaceAll(':', '');
   }
 
   function parseIcsDate(value) {
@@ -207,60 +298,64 @@
     return chunks.join('\r\n');
   }
 
-  window.exportICSFile = function () {
-    const store = readStore();
-    const user = currentUser(store);
-    if (!user) {
-      alert('ログインしてください。');
-      return;
+  window.exportICSFile = async function () {
+    try {
+      const user = await requireUser();
+      const { data: rows, error } = await client
+        .from('events')
+        .select('id, title, start_time, end_time, is_shared, is_all_day, label_id, recurrence, memo')
+        .or(`is_shared.eq.true,owner_id.eq.${user.id}`);
+      if (error) throw error;
+
+      const { data: labels, error: labelError } = await client.from('labels').select('id, name');
+      if (labelError) throw labelError;
+      const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+      const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//WhiteTree//Supabase Calendar//JA', 'CALSCALE:GREGORIAN'];
+      rows.forEach(event => {
+        const label = labels.find(item => Number(item.id) === Number(event.label_id));
+        lines.push('BEGIN:VEVENT');
+        lines.push(`UID:whitetree-${event.id}@supabase`);
+        lines.push(`DTSTAMP:${now}`);
+        lines.push(event.is_all_day ? `DTSTART;VALUE=DATE:${toIcsDate(event.start_time, true)}` : `DTSTART:${toIcsDate(event.start_time, false)}`);
+        lines.push(event.is_all_day ? `DTEND;VALUE=DATE:${toIcsDate(event.end_time, true)}` : `DTEND:${toIcsDate(event.end_time, false)}`);
+        lines.push(foldIcsLine(`SUMMARY:${escapeIcs(event.title)}`));
+        if (label) lines.push(foldIcsLine(`CATEGORIES:${escapeIcs(label.name)}`));
+        if (event.memo) lines.push(foldIcsLine(`DESCRIPTION:${escapeIcs(event.memo)}`));
+        if (event.recurrence) lines.push(`RRULE:FREQ=${event.recurrence.toUpperCase()}`);
+        lines.push(`X-WHITETREE-SCOPE:${event.is_shared ? 'SHARED' : 'PRIVATE'}`);
+        lines.push('END:VEVENT');
+      });
+      lines.push('END:VCALENDAR');
+
+      const blob = new Blob([`${lines.join('\r\n')}\r\n`], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'whitetree-events.ics';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    } catch (error) {
+      console.error(error);
+      alert(`エクスポートに失敗しました: ${error.message}`);
     }
-
-    const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
-    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//WhiteTree//Static Calendar//JA', 'CALSCALE:GREGORIAN'];
-    store.events.filter(event => event.is_shared || event.user_id === user.id).forEach(event => {
-      const label = store.labels.find(item => Number(item.id) === Number(event.label_id));
-      lines.push('BEGIN:VEVENT');
-      lines.push(`UID:whitetree-${event.id}@local`);
-      lines.push(`DTSTAMP:${now}`);
-      lines.push(event.allDay ? `DTSTART;VALUE=DATE:${toIcsDate(event.start, true)}` : `DTSTART:${toIcsDate(event.start, false)}`);
-      lines.push(event.allDay ? `DTEND;VALUE=DATE:${toIcsDate(event.end, true)}` : `DTEND:${toIcsDate(event.end, false)}`);
-      lines.push(foldIcsLine(`SUMMARY:${escapeIcs(event.title)}`));
-      if (label) lines.push(foldIcsLine(`CATEGORIES:${escapeIcs(label.name)}`));
-      if (event.memo) lines.push(foldIcsLine(`DESCRIPTION:${escapeIcs(event.memo)}`));
-      if (event.recurrence) lines.push(`RRULE:FREQ=${event.recurrence.toUpperCase() === 'WEEKLY' ? 'WEEKLY' : event.recurrence.toUpperCase() === 'MONTHLY' ? 'MONTHLY' : 'YEARLY'}`);
-      lines.push(`X-WHITETREE-SCOPE:${event.is_shared ? 'SHARED' : 'PRIVATE'}`);
-      lines.push('END:VEVENT');
-    });
-    lines.push('END:VCALENDAR');
-
-    const blob = new Blob([`${lines.join('\r\n')}\r\n`], { type: 'text/calendar;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'whitetree-events.ics';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
   };
 
-  window.importICSFile = function () {
+  window.importICSFile = async function () {
     const input = document.getElementById('icsFileInput');
     if (!input || input.files.length === 0) {
       alert('ICSファイルを選択してください');
       return;
     }
 
-    const store = readStore();
-    const user = currentUser(store);
-    if (!user) {
-      alert('ログインしてください。');
-      return;
-    }
-
-    input.files[0].text().then(text => {
+    try {
+      const user = await requireUser();
+      const labels = await fetchLabels(user.id);
+      const text = await input.files[0].text();
       const unfolded = text.replace(/\r?\n[ \t]/g, '');
       const blocks = unfolded.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g) || [];
-      let count = 0;
+      const rows = [];
+
       blocks.forEach(block => {
         const fields = {};
         block.split(/\r?\n/).forEach(line => {
@@ -277,41 +372,42 @@
         const isShared = (fields['X-WHITETREE-SCOPE'] || '').toUpperCase() !== 'PRIVATE';
         const category = unescapeIcs(fields.CATEGORIES || '');
         const label = category
-          ? store.labels.find(item => item.name === category && (isShared ? item.is_shared : (!item.is_shared && item.user_id === user.id)))
+          ? labels.find(item => item.name === category && (isShared ? item.is_shared : !item.is_shared))
           : null;
         const rrule = String(fields.RRULE || '').toUpperCase();
-        let recurrence = '';
+        let recurrence = null;
         if (rrule.includes('FREQ=WEEKLY')) recurrence = 'weekly';
         if (rrule.includes('FREQ=MONTHLY')) recurrence = 'monthly';
         if (rrule.includes('FREQ=YEARLY')) recurrence = 'yearly';
 
-        store.events.push({
-          id: store.nextEventId++,
-          user_id: user.id,
+        rows.push({
+          owner_id: user.id,
           title: unescapeIcs(fields.SUMMARY),
-          start: start.value,
-          end: end.value || start.value,
-          allDay: start.allDay,
+          start_time: start.value,
+          end_time: end.value || start.value,
+          is_all_day: start.allDay,
           is_shared: isShared,
           label_id: label?.id || null,
           recurrence,
           memo: unescapeIcs(fields.DESCRIPTION || '')
         });
-        count += 1;
       });
-      writeStore(store);
+
+      if (rows.length > 0) {
+        const { error } = await client.from('events').insert(rows);
+        if (error) throw error;
+      }
       input.value = '';
-      alert(`${count} 件の予定をインポートしました。`);
+      alert(`${rows.length} 件の予定をインポートしました。`);
       if (typeof toggleDrawer === 'function') toggleDrawer(false);
       if (typeof refreshEvents === 'function') refreshEvents();
-    }).catch(error => {
+    } catch (error) {
       console.error(error);
-      alert('インポートに失敗しました。');
-    });
+      alert(`インポートに失敗しました: ${error.message}`);
+    }
   };
 
-  const nativeFetch = window.fetch.bind(window);
-  window.fetch = function (input, init) {
+  window.fetch = async function (input, init) {
     const pathWithSearch = normalizePath(input);
     if (!pathWithSearch.startsWith('/api/')) {
       return nativeFetch(input, init);
@@ -320,172 +416,176 @@
     const url = new URL(pathWithSearch, location.href);
     const path = url.pathname;
     const method = ((init && init.method) || (typeof input !== 'string' && input.method) || 'GET').toUpperCase();
-    const store = readStore();
-    const user = currentUser(store);
 
-    function requireUser() {
-      if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
-      ensureLabels(store, user.id);
-      return null;
-    }
+    try {
+      if (path === '/api/me' && method === 'GET') {
+        return jsonResponse(await currentProfileResponse());
+      }
 
-    async function bodyJson() {
-      if (init?.body) return JSON.parse(init.body);
-      if (typeof input !== 'string' && input.body) return JSON.parse(await input.text());
-      return {};
-    }
+      if (!isConfigured) {
+        return jsonResponse({ error: 'Supabase is not configured. Set docs/static/supabase-config.js.' }, 503);
+      }
 
-    if (path === '/api/me' && method === 'GET') {
-      if (!user) return jsonResponse({ logged_in: false });
-      ensureLabels(store, user.id);
-      writeStore(store);
-      return jsonResponse({ logged_in: true, user_id: user.id, username: user.username, week_start: user.week_start ?? 1 });
-    }
+      if (path === '/api/login' && method === 'POST') {
+        const data = await bodyJson(input, init);
+        const username = String(data.username || '').trim();
+        const password = String(data.password || '');
+        const email = usernameToEmail(username);
+        let result = await client.auth.signInWithPassword({ email, password });
 
-    if (path === '/api/login' && method === 'POST') {
-      return bodyJson().then(data => {
-        const username = String(data.username || 'user').trim() || 'user';
-        let nextUser = store.users.find(item => item.username === username);
-        if (!nextUser) {
-          nextUser = { id: store.nextUserId++, username, week_start: 1 };
-          store.users.push(nextUser);
+        if (result.error) {
+          result = await client.auth.signUp({ email, password });
+          if (result.error) throw result.error;
+          if (!result.data.session) {
+            return jsonResponse({ success: false, error: 'Supabaseのメール確認が有効です。Authentication設定でConfirm emailを無効にしてください。' });
+          }
         }
-        localStorage.setItem(SESSION_KEY, String(nextUser.id));
-        ensureLabels(store, nextUser.id);
-        writeStore(store);
-        return jsonResponse({ success: true, user_id: nextUser.id, username: nextUser.username, week_start: nextUser.week_start });
-      });
-    }
 
-    if (path === '/api/logout' && method === 'POST') {
-      localStorage.removeItem(SESSION_KEY);
-      return jsonResponse({ success: true });
-    }
+        const user = result.data.user || result.data.session?.user;
+        const profile = await ensureProfile(user, username);
+        await ensureDefaultLabels(user.id);
+        return jsonResponse({ success: true, user_id: user.id, username: profile.username, week_start: profile.week_start });
+      }
 
-    const authError = requireUser();
-    if (authError) return authError;
-
-    if (path === '/api/settings' && method === 'PUT') {
-      return bodyJson().then(data => {
-        user.username = String(data.username || user.username).trim() || user.username;
-        writeStore(store);
+      if (path === '/api/logout' && method === 'POST') {
+        await client.auth.signOut();
         return jsonResponse({ success: true });
-      });
-    }
+      }
 
-    if (path === '/api/preferences' && method === 'PUT') {
-      return bodyJson().then(data => {
-        user.week_start = Number(data.week_start) === 0 ? 0 : 1;
-        writeStore(store);
-        return jsonResponse({ success: true, week_start: user.week_start });
-      });
-    }
+      const user = await requireUser();
 
-    if (path === '/api/labels' && method === 'GET') {
-      const labels = store.labels
-        .filter(label => label.is_shared || label.user_id === user.id)
-        .sort((a, b) => Number(b.is_shared) - Number(a.is_shared) || (a.sort_order || 999) - (b.sort_order || 999));
-      writeStore(store);
-      return jsonResponse(labels);
-    }
-
-    if (path === '/api/labels' && method === 'POST') {
-      return jsonResponse({ success: false, error: '最大10個の固定ラベル枠仕様のため、新規作成はできません。既存のラベルを編集してください。' });
-    }
-
-    if (path === '/api/labels/reorder' && method === 'PUT') {
-      return bodyJson().then(data => {
-        (data.label_ids || []).forEach((id, index) => {
-          const label = store.labels.find(item => Number(item.id) === Number(id));
-          if (label) label.sort_order = index + 1;
-        });
-        writeStore(store);
+      if (path === '/api/settings' && method === 'PUT') {
+        const data = await bodyJson(input, init);
+        const username = String(data.username || '').trim();
+        const password = String(data.password || '');
+        if (username) {
+          const { error } = await client.from('profiles').update({ username }).eq('id', user.id);
+          if (error) throw error;
+        }
+        if (password) {
+          const { error } = await client.auth.updateUser({ password });
+          if (error) throw error;
+        }
         return jsonResponse({ success: true });
-      });
-    }
+      }
 
-    const labelMatch = path.match(/^\/api\/labels\/(\d+)$/);
-    if (labelMatch && method === 'PUT') {
-      return bodyJson().then(data => {
-        const label = store.labels.find(item => Number(item.id) === Number(labelMatch[1]));
+      if (path === '/api/preferences' && method === 'PUT') {
+        const data = await bodyJson(input, init);
+        const weekStart = Number(data.week_start) === 0 ? 0 : 1;
+        const { error } = await client.from('profiles').update({ week_start: weekStart }).eq('id', user.id);
+        if (error) throw error;
+        return jsonResponse({ success: true, week_start: weekStart });
+      }
+
+      if (path === '/api/labels' && method === 'GET') {
+        return jsonResponse(await fetchLabels(user.id));
+      }
+
+      if (path === '/api/labels' && method === 'POST') {
+        return jsonResponse({ success: false, error: '最大10個の固定ラベル枠仕様のため、新規作成はできません。既存のラベルを編集してください。' });
+      }
+
+      if (path === '/api/labels/reorder' && method === 'PUT') {
+        const data = await bodyJson(input, init);
+        const ids = data.label_ids || [];
+        for (let index = 0; index < ids.length; index += 1) {
+          const { error } = await client.from('labels').update({ sort_order: index + 1 }).eq('id', ids[index]);
+          if (error) throw error;
+        }
+        return jsonResponse({ success: true });
+      }
+
+      const labelMatch = path.match(/^\/api\/labels\/(\d+)$/);
+      if (labelMatch && method === 'PUT') {
+        const data = await bodyJson(input, init);
+        const { error } = await client
+          .from('labels')
+          .update({ name: data.name, color: data.color })
+          .eq('id', Number(labelMatch[1]));
+        if (error) throw error;
+        return jsonResponse({ success: true });
+      }
+      if (labelMatch && method === 'DELETE') {
+        const labels = await fetchLabels(user.id);
+        const label = labels.find(item => Number(item.id) === Number(labelMatch[1]));
         if (!label) return jsonResponse({ error: 'Not found' }, 404);
-        label.name = String(data.name || label.name);
-        label.color = String(data.color || label.color);
-        writeStore(store);
+        const siblings = labels.filter(item => item.is_shared === label.is_shared).sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999));
+        const index = Math.max(0, siblings.findIndex(item => Number(item.id) === Number(label.id)));
+        const { error } = await client
+          .from('labels')
+          .update({ name: `ラベル${index + 1}`, color: COLORS[index % COLORS.length] })
+          .eq('id', Number(labelMatch[1]));
+        if (error) throw error;
         return jsonResponse({ success: true });
-      });
-    }
-    if (labelMatch && method === 'DELETE') {
-      const label = store.labels.find(item => Number(item.id) === Number(labelMatch[1]));
-      if (!label) return jsonResponse({ error: 'Not found' }, 404);
-      const siblings = store.labels.filter(item => item.is_shared === label.is_shared && (label.is_shared || item.user_id === user.id))
-        .sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999));
-      const index = Math.max(0, siblings.findIndex(item => item.id === label.id));
-      label.name = `ラベル${index + 1}`;
-      label.color = COLORS[index % COLORS.length];
-      writeStore(store);
-      return jsonResponse({ success: true });
-    }
+      }
 
-    if (path === '/api/holidays' && method === 'GET') {
-      return jsonResponse([]);
-    }
+      if (path === '/api/holidays' && method === 'GET') {
+        return jsonResponse([]);
+      }
 
-    if (path === '/api/events' && method === 'GET') {
-      return jsonResponse(calendarEvents(store, user, url.searchParams));
-    }
+      if (path === '/api/events' && method === 'GET') {
+        return jsonResponse(await fetchEvents(user, url.searchParams));
+      }
 
-    if (path === '/api/events' && method === 'POST') {
-      return bodyJson().then(data => {
-        const id = store.nextEventId++;
-        store.events.push({
-          id,
-          user_id: user.id,
+      if (path === '/api/events' && method === 'POST') {
+        const data = await bodyJson(input, init);
+        const row = {
+          owner_id: user.id,
           title: data.title,
-          start: data.start,
-          end: data.end,
-          allDay: !!(data.allDay || data.is_all_day),
+          start_time: data.start,
+          end_time: data.end,
           is_shared: !!data.is_shared,
+          is_all_day: !!(data.allDay || data.is_all_day),
           label_id: data.label_id ? Number(data.label_id) : null,
-          recurrence: data.recurrence || '',
+          recurrence: data.recurrence || null,
           memo: data.memo || ''
-        });
-        writeStore(store);
-        return jsonResponse({ success: true, id });
-      });
-    }
+        };
+        const { data: inserted, error } = await client.from('events').insert(row).select('id').single();
+        if (error) throw error;
+        return jsonResponse({ success: true, id: inserted.id });
+      }
 
-    if (path === '/api/events/clear' && method === 'DELETE') {
-      store.events = store.events.filter(event => !event.is_shared && event.user_id !== user.id);
-      writeStore(store);
-      return jsonResponse({ success: true });
-    }
-
-    const eventMatch = path.match(/^\/api\/events\/(\d+)$/);
-    if (eventMatch && method === 'PUT') {
-      return bodyJson().then(data => {
-        const event = store.events.find(item => Number(item.id) === Number(eventMatch[1]));
-        if (!event) return jsonResponse({ error: 'Not found' }, 404);
-        Object.assign(event, {
-          title: data.title,
-          start: data.start,
-          end: data.end,
-          allDay: !!(data.allDay || data.is_all_day),
-          is_shared: !!data.is_shared,
-          label_id: data.label_id ? Number(data.label_id) : null,
-          recurrence: data.recurrence || '',
-          memo: data.memo || ''
-        });
-        writeStore(store);
+      if (path === '/api/events/clear' && method === 'DELETE') {
+        const { data: rows, error } = await client
+          .from('events')
+          .select('id')
+          .or(`is_shared.eq.true,owner_id.eq.${user.id}`);
+        if (error) throw error;
+        const ids = rows.map(row => row.id);
+        if (ids.length > 0) {
+          const { error: deleteError } = await client.from('events').delete().in('id', ids);
+          if (deleteError) throw deleteError;
+        }
         return jsonResponse({ success: true });
-      });
-    }
-    if (eventMatch && method === 'DELETE') {
-      store.events = store.events.filter(item => Number(item.id) !== Number(eventMatch[1]));
-      writeStore(store);
-      return jsonResponse({ success: true });
-    }
+      }
 
-    return jsonResponse({ error: 'Not found' }, 404);
+      const eventMatch = path.match(/^\/api\/events\/(\d+)$/);
+      if (eventMatch && method === 'PUT') {
+        const data = await bodyJson(input, init);
+        const row = {
+          title: data.title,
+          start_time: data.start,
+          end_time: data.end,
+          is_shared: !!data.is_shared,
+          is_all_day: !!(data.allDay || data.is_all_day),
+          label_id: data.label_id ? Number(data.label_id) : null,
+          recurrence: data.recurrence || null,
+          memo: data.memo || ''
+        };
+        const { error } = await client.from('events').update(row).eq('id', Number(eventMatch[1]));
+        if (error) throw error;
+        return jsonResponse({ success: true });
+      }
+      if (eventMatch && method === 'DELETE') {
+        const { error } = await client.from('events').delete().eq('id', Number(eventMatch[1]));
+        if (error) throw error;
+        return jsonResponse({ success: true });
+      }
+
+      return jsonResponse({ error: 'Not found' }, 404);
+    } catch (error) {
+      const status = error.message === 'Unauthorized' ? 401 : 500;
+      return jsonResponse({ success: false, error: error.message || String(error) }, status);
+    }
   };
 }());

@@ -8,4 +8,4 @@ This repository includes a static GitHub Pages build in `docs/`.
 4. Select the branch and `/docs` folder.
 5. Save.
 
-The Pages version stores events, labels, and settings in the browser's localStorage. It does not use the Flask server or SQLite database. Use ICS export/import from the drawer to back up or move data between browsers.
+The Pages version stores events, labels, and settings in Supabase. It does not use the Flask server or SQLite database. Configure Supabase with `SUPABASE_SETUP.md` before using the public app.
