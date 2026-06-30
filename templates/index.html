@@ -1511,26 +1511,38 @@
                 multiDayEvents.push({ event, startDate, visualEndDate, totalSegments });
             });
 
+            const getStableEventOrder = event => {
+                const rawId = event.extendedProps?.original_id || event.id || '';
+                const numericId = Number(String(rawId).split('_')[0]);
+                return Number.isFinite(numericId) ? numericId : String(rawId);
+            };
+
             multiDayEvents.sort((a, b) => {
+                const aOrder = getStableEventOrder(a.event);
+                const bOrder = getStableEventOrder(b.event);
+                if (typeof aOrder === 'number' && typeof bOrder === 'number' && aOrder !== bOrder) {
+                    return aOrder - bOrder;
+                }
+                if (String(aOrder) !== String(bOrder)) {
+                    return String(aOrder).localeCompare(String(bOrder), 'ja');
+                }
                 if (a.startDate !== b.startDate) return a.startDate < b.startDate ? -1 : 1;
                 if (a.visualEndDate !== b.visualEndDate) return a.visualEndDate > b.visualEndDate ? -1 : 1;
-                const aLabelOrder = a.event.extendedProps?.label_order || 999;
-                const bLabelOrder = b.event.extendedProps?.label_order || 999;
-                if (aLabelOrder !== bLabelOrder) return aLabelOrder - bLabelOrder;
                 return String(a.event.title || '').localeCompare(String(b.event.title || ''), 'ja');
             });
 
-            const laneEndDates = [];
+            const laneRanges = [];
             const usedLanesByDate = new Map();
 
             multiDayEvents.forEach(({ event, startDate, visualEndDate, totalSegments }) => {
-                let laneIndex = laneEndDates.findIndex(endDate => endDate <= startDate);
+                let laneIndex = laneRanges.findIndex(ranges => {
+                    return ranges.every(range => range.visualEndDate <= startDate || visualEndDate <= range.startDate);
+                });
                 if (laneIndex === -1) {
-                    laneEndDates.push(visualEndDate);
-                    laneIndex = laneEndDates.length - 1;
-                } else {
-                    laneEndDates[laneIndex] = visualEndDate;
+                    laneRanges.push([]);
+                    laneIndex = laneRanges.length - 1;
                 }
+                laneRanges[laneIndex].push({ startDate, visualEndDate });
 
                 const lane = laneIndex + 1;
                 let currentDate = startDate;
