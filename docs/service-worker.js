@@ -1,24 +1,19 @@
-const CACHE_VERSION = 'whitetree-shell-v36';
+const CACHE_VERSION = 'whitetree-shell-v37';
 const APP_SHELL = [
   './',
   './static/manifest.webmanifest?v=pwa-start-1',
   './static/supabase-config.js?v=account-name-2',
   './static/local-api.js?v=account-name-2',
+  './static/fullcalendar-6.1.18.min.js?v=fc-local-1',
   './static/icons/icon-192.png',
   './static/icons/icon-512.png',
   './static/icons/apple-touch-icon.png'
 ];
-const FULLCALENDAR_CDN = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.18/index.global.min.js';
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_VERSION);
     await cache.addAll(APP_SHELL);
-    try {
-      await cache.add(new Request(FULLCALENDAR_CDN, { mode: 'no-cors' }));
-    } catch (error) {
-      // Keep the local app shell usable even when the CDN is unavailable.
-    }
     await self.skipWaiting();
   })());
 });
