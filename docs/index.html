@@ -1077,8 +1077,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="static/supabase-config.js?v=supabase-pagination-1"></script>
-    <script src="static/local-api.js?v=supabase-pagination-1"></script>
+    <script src="static/supabase-config.js?v=multi-day-band-1"></script>
+    <script src="static/local-api.js?v=multi-day-band-1"></script>
     <script>
         let calendar;
         let allEvents = [];
@@ -1489,7 +1489,20 @@
 
                 let currentDate = startDate;
                 let index = 0;
+                const totalSegments = Math.max(1, Math.round((new Date(endDate) - new Date(startDate)) / 86400000));
                 while (currentDate < endDate) {
+                    const segmentClasses = ['multi-day-segment'];
+                    if (index === 0) {
+                        segmentClasses.push('multi-day-segment-start');
+                    } else {
+                        segmentClasses.push('multi-day-segment-continuation');
+                    }
+                    if (index === totalSegments - 1) {
+                        segmentClasses.push('multi-day-segment-end');
+                    } else if (index > 0) {
+                        segmentClasses.push('multi-day-segment-middle');
+                    }
+
                     expanded.push({
                         ...event,
                         id: `${event.id}__day_${currentDate}`,
@@ -1498,10 +1511,13 @@
                         end: addDaysToDateStr(currentDate, 1),
                         allDay: true,
                         display: 'block',
+                        className: segmentClasses.join(' '),
+                        classNames: segmentClasses,
                         extendedProps: {
                             ...(event.extendedProps || {}),
                             original_id: event.extendedProps?.original_id || event.id,
-                            multi_day_segment_index: index
+                            multi_day_segment_index: index,
+                            multi_day_segment_total: totalSegments
                         }
                     });
                     currentDate = addDaysToDateStr(currentDate, 1);
@@ -1833,8 +1849,9 @@
 
                 eventClassNames: function(arg) {
                     if (arg.event.extendedProps.is_holiday) return ['fc-event-holiday'];
-                    if (arg.event.allDay) return ['fc-event-forced-all-day'];
-                    return [];
+                    const classes = [...(arg.event.classNames || [])];
+                    if (arg.event.allDay) classes.push('fc-event-forced-all-day');
+                    return classes;
                 },
 
                 eventDidMount: function(info) {
