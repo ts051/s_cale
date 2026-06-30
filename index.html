@@ -599,9 +599,9 @@
             position: relative !important;
             z-index: 20 !important;
             border-radius: 0 !important;
-            margin-left: 4px !important;
-            margin-right: 4px !important;
-            width: calc(100% - 8px) !important;
+            margin-left: 2px !important;
+            margin-right: 2px !important;
+            width: calc(100% - 4px) !important;
             min-height: 11px !important;
             background-color: var(--multi-day-segment-color) !important;
             box-shadow: none !important;
@@ -612,38 +612,35 @@
             position: absolute;
             top: 0;
             bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: -1;
+            left: 100%;
+            width: 6px;
+            z-index: 2;
             background: var(--multi-day-segment-color);
+            display: none;
             pointer-events: none;
         }
         .fc .multi-day-segment:not(.multi-day-segment-end)::before {
-            right: -8px;
+            display: block;
         }
         .fc .multi-day-segment-start {
             border-top-left-radius: 3px !important;
             border-bottom-left-radius: 3px !important;
-            margin-left: 4px !important;
-            width: calc(100% - 8px) !important;
+            margin-left: 2px !important;
+            width: calc(100% - 4px) !important;
             box-shadow: none !important;
         }
         .fc .multi-day-segment-start::before {
-            left: 0;
-            border-top-left-radius: 3px;
-            border-bottom-left-radius: 3px;
+            border-radius: 0;
         }
         .fc .multi-day-segment-end {
             border-top-right-radius: 3px !important;
             border-bottom-right-radius: 3px !important;
-            margin-right: 4px !important;
-            width: calc(100% - 8px) !important;
+            margin-right: 2px !important;
+            width: calc(100% - 4px) !important;
             box-shadow: none !important;
         }
         .fc .multi-day-segment-end::before {
-            right: 0;
-            border-top-right-radius: 3px;
-            border-bottom-right-radius: 3px;
+            display: none;
         }
         .fc .multi-day-segment-continuation .fc-event-title,
         .fc .multi-day-segment-continuation .fc-event-time {
@@ -651,10 +648,14 @@
         }
         .fc .multi-day-segment .fc-event-main {
             min-height: 10px;
+            position: relative;
+            z-index: 3;
             background: var(--multi-day-segment-color) !important;
         }
         .fc .multi-day-segment .fc-event-main-frame {
             min-height: 10px;
+            position: relative;
+            z-index: 3;
             background: var(--multi-day-segment-color) !important;
         }
 
@@ -1084,8 +1085,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="static/supabase-config.js?v=multi-day-align-2"></script>
-    <script src="static/local-api.js?v=multi-day-align-2"></script>
+    <script src="static/supabase-config.js?v=multi-day-align-3"></script>
+    <script src="static/local-api.js?v=multi-day-align-3"></script>
     <script>
         let calendar;
         let allEvents = [];
