@@ -431,14 +431,9 @@
         const username = String(data.username || '').trim();
         const password = String(data.password || '');
         const email = usernameToEmail(username);
-        let result = await client.auth.signInWithPassword({ email, password });
-
+        const result = await client.auth.signInWithPassword({ email, password });
         if (result.error) {
-          result = await client.auth.signUp({ email, password });
-          if (result.error) throw result.error;
-          if (!result.data.session) {
-            return jsonResponse({ success: false, error: 'Supabaseのメール確認が有効です。Authentication設定でConfirm emailを無効にしてください。' });
-          }
+          return jsonResponse({ success: false, error: 'ユーザー名またはパスワードが違います。' });
         }
 
         const user = result.data.user || result.data.session?.user;

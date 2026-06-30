@@ -6,7 +6,7 @@ This GitHub Pages build stores calendar data in Supabase instead of browser loca
 
 Create a new project at Supabase.
 
-In Authentication > Providers > Email, disable email confirmation for this app unless you want to pre-create users manually. The current login screen auto-creates a Supabase Auth user on first login.
+In Authentication > Providers > Email, disable public sign-ups for this app. Create the two allowed users manually in the Supabase dashboard.
 
 ## 2. Create tables and policies
 
@@ -50,10 +50,19 @@ https://ts051.github.io/s_cale/
 
 The existing username/password screen is reused.
 
-On first login, the app tries to create a Supabase Auth user with an internal email derived from the username:
+The app only signs in existing users. It does not create accounts from the public login page.
+
+Create users manually in Authentication > Users. The app maps the visible username to an internal email:
 
 ```text
 username@whitetree.local
 ```
 
-On later logins, it signs in with the same username/password.
+For example, create only:
+
+```text
+husband@whitetree.local
+wife@whitetree.local
+```
+
+Then users log in with `husband` or `wife` plus the password you set in Supabase.
