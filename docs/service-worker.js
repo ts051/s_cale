@@ -1,9 +1,9 @@
-const CACHE_VERSION = 'whitetree-shell-v26';
+const CACHE_VERSION = 'whitetree-shell-v28';
 const APP_SHELL = [
   './',
   './static/manifest.webmanifest?v=pwa-start-1',
-  './static/supabase-config.js?v=range-cache-1',
-  './static/local-api.js?v=range-cache-1',
+  './static/supabase-config.js?v=account-name-2',
+  './static/local-api.js?v=account-name-2',
   './static/icons/icon-192.png',
   './static/icons/icon-512.png',
   './static/icons/apple-touch-icon.png'

@@ -1382,6 +1382,12 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
+                    if (data.username && currentUser) {
+                        currentUser.username = data.username;
+                        localStorage.setItem('whiteTree:lastUser', JSON.stringify(currentUser));
+                        document.getElementById('drawerUserInfo').innerText = data.username;
+                        document.getElementById('settingsUsername').value = data.username;
+                    }
                     const flashContainer = document.getElementById('successFlashContainer');
                     flashContainer.innerHTML = '<div class="flash-success">アカウント情報を更新しました。</div>';
                     setTimeout(() => { flashContainer.innerHTML = ''; }, 4000);
