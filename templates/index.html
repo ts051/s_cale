@@ -599,9 +599,9 @@
             position: relative !important;
             z-index: 20 !important;
             border-radius: 0 !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-            width: 100% !important;
+            margin-left: 4px !important;
+            margin-right: 4px !important;
+            width: calc(100% - 8px) !important;
             min-height: 11px !important;
             background-color: var(--multi-day-segment-color) !important;
             box-shadow: none !important;
@@ -618,17 +618,14 @@
             background: var(--multi-day-segment-color);
             pointer-events: none;
         }
-        .fc .multi-day-segment:not(.multi-day-segment-start)::before {
-            left: -4px;
-        }
         .fc .multi-day-segment:not(.multi-day-segment-end)::before {
-            right: -4px;
+            right: -8px;
         }
         .fc .multi-day-segment-start {
             border-top-left-radius: 3px !important;
             border-bottom-left-radius: 3px !important;
-            margin-left: 0 !important;
-            width: 100% !important;
+            margin-left: 4px !important;
+            width: calc(100% - 8px) !important;
             box-shadow: none !important;
         }
         .fc .multi-day-segment-start::before {
@@ -639,8 +636,8 @@
         .fc .multi-day-segment-end {
             border-top-right-radius: 3px !important;
             border-bottom-right-radius: 3px !important;
-            margin-right: 0 !important;
-            width: 100% !important;
+            margin-right: 4px !important;
+            width: calc(100% - 8px) !important;
             box-shadow: none !important;
         }
         .fc .multi-day-segment-end::before {
