@@ -1,10 +1,12 @@
-const CACHE_VERSION = 'whitetree-shell-v17';
+const CACHE_VERSION = 'whitetree-shell-v18';
 const APP_SHELL = [
-  '/',
-  '/static/manifest.webmanifest',
-  '/static/icons/icon-192.png',
-  '/static/icons/icon-512.png',
-  '/static/icons/apple-touch-icon.png'
+  './',
+  './static/manifest.webmanifest',
+  './static/supabase-config.js?v=supabase-pagination-1',
+  './static/local-api.js?v=supabase-pagination-1',
+  './static/icons/icon-192.png',
+  './static/icons/icon-512.png',
+  './static/icons/apple-touch-icon.png'
 ];
 const FULLCALENDAR_CDN = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.18/index.global.min.js';
 
@@ -41,10 +43,10 @@ self.addEventListener('fetch', event => {
       try {
         const fresh = await fetch(request);
         const cache = await caches.open(CACHE_VERSION);
-        await cache.put('/', fresh.clone());
+        await cache.put('./', fresh.clone());
         return fresh;
       } catch (error) {
-        const shell = await caches.match('/');
+        const shell = await caches.match('./');
         if (shell) return shell;
         throw error;
       }
