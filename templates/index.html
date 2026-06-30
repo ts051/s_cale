@@ -557,19 +557,13 @@
             min-height: 0 !important;
             display: flex;
             flex-direction: column;
-            overflow: visible !important;
+            overflow: hidden !important;
         }
         .fc .fc-daygrid-day-events {
             flex: 1 1 auto;
             min-height: 0 !important;
-            overflow: visible !important;
             position: relative;
             z-index: 5;
-        }
-        .fc .fc-daygrid-day,
-        .fc .fc-daygrid-event-harness,
-        .fc .fc-daygrid-event-harness-abs {
-            overflow: visible !important;
         }
         .fc .fc-daygrid-day-bottom {
             flex: 0 0 auto;
@@ -594,76 +588,6 @@
             background-color: var(--fc-event-bg-alpha-color, rgba(122, 148, 166, 0.15)) !important;
             color: var(--fc-event-text-solid-color, #7a94a6) !important;
             padding: 1px 4px !important;
-        }
-        .fc .multi-day-segment {
-            position: relative !important;
-            z-index: 20 !important;
-            border-radius: 0 !important;
-            margin-left: 2px !important;
-            margin-right: 2px !important;
-            width: calc(100% - 4px) !important;
-            min-height: 11px !important;
-            background-color: var(--multi-day-segment-color) !important;
-            box-shadow: none !important;
-            overflow: visible !important;
-        }
-        .fc .multi-day-segment::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 100%;
-            width: 6px;
-            z-index: 2;
-            background: var(--multi-day-segment-color);
-            display: none;
-            pointer-events: none;
-        }
-        .fc .multi-day-segment:not(.multi-day-segment-end)::before {
-            display: block;
-        }
-        .fc .multi-day-segment-start {
-            border-top-left-radius: 3px !important;
-            border-bottom-left-radius: 3px !important;
-            margin-left: 2px !important;
-            width: calc(100% - 4px) !important;
-            box-shadow: none !important;
-        }
-        .fc .multi-day-segment-start::before {
-            border-radius: 0;
-        }
-        .fc .multi-day-segment-end {
-            border-top-right-radius: 3px !important;
-            border-bottom-right-radius: 3px !important;
-            margin-right: 2px !important;
-            width: calc(100% - 4px) !important;
-            box-shadow: none !important;
-        }
-        .fc .multi-day-segment-end::before {
-            display: none;
-        }
-        .fc .multi-day-segment-continuation .fc-event-title,
-        .fc .multi-day-segment-continuation .fc-event-time {
-            visibility: hidden;
-        }
-        .fc .multi-day-segment .fc-event-main {
-            min-height: 10px;
-            position: relative;
-            z-index: 3;
-            background: var(--multi-day-segment-color) !important;
-        }
-        .fc .multi-day-segment .fc-event-main-frame {
-            min-height: 10px;
-            position: relative;
-            z-index: 3;
-            background: var(--multi-day-segment-color) !important;
-        }
-        .fc .multi-day-lane-spacer {
-            visibility: hidden !important;
-            pointer-events: none !important;
-            min-height: 11px !important;
-            margin-left: 2px !important;
-            margin-right: 2px !important;
         }
 
         /* 祝日のデザイン設定：他の終日予定の枠組と完全一致（アクセント線なし、濃い赤背景、白文字） */
@@ -1487,10 +1411,6 @@
             if (calendar) applyFilter();
         }
 
-        function expandMultiDayAllDayEvents(events) {
-            return events;
-        }
-
         function hexToRgba(hex, alpha) {
             hex = hex.replace('#', '');
             if (hex.length === 3) {
@@ -1810,18 +1730,16 @@
                     let aHoliday = a.extendedProps?.is_holiday || 0;
                     let bHoliday = b.extendedProps?.is_holiday || 0;
                     if (aHoliday !== bHoliday) { return bHoliday - aHoliday; }
-                    const aLane = a.extendedProps?.multi_day_lane || 0;
-                    const bLane = b.extendedProps?.multi_day_lane || 0;
-                    if (aLane || bLane) {
-                        if (!aLane) return 1;
-                        if (!bLane) return -1;
-                        if (aLane !== bLane) return aLane - bLane;
-                    }
                     if (a.allDay !== b.allDay) { return a.allDay ? -1 : 1; }
-                    const aLabelOrder = a.extendedProps?.label_order || 999;
-                    const bLabelOrder = b.extendedProps?.label_order || 999;
-                    if (aLabelOrder !== bLabelOrder) { return aLabelOrder - bLabelOrder; }
-                    if (a.start !== b.start) { return a.start < b.start ? -1 : 1; }
+                    const aStart = a.start ? a.start.getTime() : 0;
+                    const bStart = b.start ? b.start.getTime() : 0;
+                    if (aStart !== bStart) { return aStart - bStart; }
+                    const aDuration = a.end && a.start ? a.end.getTime() - a.start.getTime() : 0;
+                    const bDuration = b.end && b.start ? b.end.getTime() - b.start.getTime() : 0;
+                    if (aDuration !== bDuration) { return bDuration - aDuration; }
+                    const aId = String(a.extendedProps?.original_id || a.id || '');
+                    const bId = String(b.extendedProps?.original_id || b.id || '');
+                    if (aId !== bId) { return aId.localeCompare(bId, 'ja', { numeric: true }); }
                     return a.title.localeCompare(b.title, 'ja');
                 },
                 eventOrderStrict: true,
@@ -1848,16 +1766,12 @@
 
                 eventClassNames: function(arg) {
                     if (arg.event.extendedProps.is_holiday) return ['fc-event-holiday'];
-                    const classes = [...(arg.event.extendedProps?.multi_day_segment_classes || [])];
+                    const classes = [];
                     if (arg.event.allDay) classes.push('fc-event-forced-all-day');
                     return classes;
                 },
 
                 eventDidMount: function(info) {
-                    if (info.el.classList.contains('multi-day-segment')) {
-                        const segmentColor = info.event.backgroundColor || info.event.borderColor || '#7a94a6';
-                        info.el.style.setProperty('--multi-day-segment-color', segmentColor);
-                    }
                     if (!info.event.allDay && !info.event.extendedProps.is_holiday) {
                         const baseColor = info.event.backgroundColor || '#7a94a6';
                         info.el.style.setProperty('--fc-event-bg-alpha-color', hexToRgba(baseColor, 0.15));
@@ -2316,7 +2230,7 @@
             // 2. 祝日データを合流させた1つの共通の配列（イベントソース）を作成して供給
             // 祝日は選択されているフィルター（すべて表示、共有、個人）に関わらず、常に合流させます
             let combinedSources = [];
-            combinedSources = expandMultiDayAllDayEvents(filteredEvents).concat(updatedHolidays);
+            combinedSources = filteredEvents.concat(updatedHolidays);
             calendar.addEventSource(combinedSources);
         }
 
@@ -2351,8 +2265,14 @@
         window.addEventListener('offline', () => setOfflineStatus(true));
 
         if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (sessionStorage.getItem('whiteTree:swReloaded') === '1') return;
+                sessionStorage.setItem('whiteTree:swReloaded', '1');
+                window.location.reload();
+            });
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+                    .then(registration => registration.update())
                     .catch(error => console.warn('Service Worker registration failed:', error));
             });
         }

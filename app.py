@@ -407,47 +407,7 @@ def get_events():
     events = []
 
     def append_calendar_event(target, event):
-        if not event.get('allDay') or not event.get('start') or not event.get('end'):
-            target.append(event)
-            return
-
-        try:
-            start_dt = datetime.strptime(event['start'].split('T')[0], '%Y-%m-%d')
-            end_dt = datetime.strptime(event['end'].split('T')[0], '%Y-%m-%d')
-        except (TypeError, ValueError):
-            target.append(event)
-            return
-
-        if end_dt <= start_dt + timedelta(days=1):
-            target.append(event)
-            return
-
-        current_dt = start_dt
-        segment_index = 0
-        total_segments = (end_dt - start_dt).days
-        while current_dt < end_dt:
-            segment = copy.deepcopy(event)
-            current_str = current_dt.strftime('%Y-%m-%d')
-            segment_classes = ['multi-day-segment']
-            if segment_index == 0:
-                segment_classes.append('multi-day-segment-start')
-            elif segment_index == total_segments - 1:
-                segment_classes.append('multi-day-segment-end')
-                segment_classes.append('multi-day-segment-continuation')
-            else:
-                segment_classes.append('multi-day-segment-middle')
-                segment_classes.append('multi-day-segment-continuation')
-
-            segment['id'] = f"{event['id']}__day_{current_str}"
-            segment['start'] = current_str
-            segment['end'] = (current_dt + timedelta(days=1)).strftime('%Y-%m-%d')
-            segment['display'] = 'block'
-            segment['className'] = ' '.join(segment_classes)
-            segment['extendedProps']['original_id'] = event['extendedProps'].get('original_id', event['id'])
-            segment['extendedProps']['multi_day_segment_index'] = segment_index
-            target.append(segment)
-            current_dt += timedelta(days=1)
-            segment_index += 1
+        target.append(event)
     
     for row in rows:
         default_color = '#1aa260' if row['is_shared'] else '#1a73e8'
