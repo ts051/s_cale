@@ -1702,15 +1702,21 @@
                 dayCellContent: function(e) { return e.dayNumberText.replace('日', ''); },
 
                 eventOrder: function(a, b) {
+                    const toEventTime = value => {
+                        if (!value) return 0;
+                        if (value instanceof Date) return value.getTime();
+                        const parsed = new Date(value).getTime();
+                        return Number.isFinite(parsed) ? parsed : 0;
+                    };
                     let aHoliday = a.extendedProps?.is_holiday || 0;
                     let bHoliday = b.extendedProps?.is_holiday || 0;
                     if (aHoliday !== bHoliday) { return bHoliday - aHoliday; }
                     if (a.allDay !== b.allDay) { return a.allDay ? -1 : 1; }
-                    const aStart = a.start ? a.start.getTime() : 0;
-                    const bStart = b.start ? b.start.getTime() : 0;
+                    const aStart = toEventTime(a.start);
+                    const bStart = toEventTime(b.start);
                     if (aStart !== bStart) { return aStart - bStart; }
-                    const aDuration = a.end && a.start ? a.end.getTime() - a.start.getTime() : 0;
-                    const bDuration = b.end && b.start ? b.end.getTime() - b.start.getTime() : 0;
+                    const aDuration = a.end && a.start ? toEventTime(a.end) - toEventTime(a.start) : 0;
+                    const bDuration = b.end && b.start ? toEventTime(b.end) - toEventTime(b.start) : 0;
                     if (aDuration !== bDuration) { return bDuration - aDuration; }
                     const aId = String(a.extendedProps?.original_id || a.id || '');
                     const bId = String(b.extendedProps?.original_id || b.id || '');
