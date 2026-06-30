@@ -2253,7 +2253,11 @@
             });
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js', { scope: './' })
-                    .then(registration => registration.update())
+                    .then(registration => {
+                        if (registration && typeof registration.update === 'function') {
+                            registration.update();
+                        }
+                    })
                     .catch(error => console.warn('Service Worker registration failed:', error));
             });
         }
