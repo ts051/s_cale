@@ -1077,8 +1077,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="static/supabase-config.js"></script>
-    <script src="static/local-api.js"></script>
+    <script src="static/supabase-config.js?v=supabase-pagination-1"></script>
+    <script src="static/local-api.js?v=supabase-pagination-1"></script>
     <script>
         let calendar;
         let allEvents = [];
@@ -2336,7 +2336,7 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+                navigator.serviceWorker.register('service-worker.js', { scope: './' })
                     .catch(error => console.warn('Service Worker registration failed:', error));
             });
         }
