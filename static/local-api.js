@@ -619,20 +619,9 @@
         if (!username) {
           return jsonResponse({ success: false, error: 'ユーザー名は英数字で入力してください。' });
         }
-        const updates = {};
-        const email = usernameToEmail(username);
-        if (user.email !== email) {
-          updates.email = email;
-        }
         if (password) {
-          updates.password = password;
-        }
-        if (Object.keys(updates).length > 0) {
-          const { data: updatedAuth, error } = await client.auth.updateUser(updates);
+          const { error } = await client.auth.updateUser({ password });
           if (error) throw error;
-          if (updates.email && updatedAuth?.user?.email !== email) {
-            throw new Error('ユーザー名の変更が確認待ちになりました。Supabase Authのメール変更確認を無効にしてから再度保存してください。');
-          }
         }
         const { error } = await client.from('profiles').update({ username }).eq('id', user.id);
         if (error) throw error;
