@@ -4,6 +4,8 @@
   const nativeFetch = window.fetch.bind(window);
   const isConfigured = !!(config.url && config.anonKey && window.supabase);
   const client = isConfigured ? window.supabase.createClient(config.url, config.anonKey) : null;
+  const INTERNAL_EMAIL_DOMAIN = 'whitetree.example.com';
+  const LEGACY_EMAIL_DOMAIN = 'whitetree.local';
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register = function () {
@@ -38,7 +40,22 @@
   }
 
   function usernameToEmail(username) {
-    return `${normalizeUsername(username) || 'user'}@whitetree.local`;
+    return `${normalizeUsername(username) || 'user'}@${INTERNAL_EMAIL_DOMAIN}`;
+  }
+
+  function usernameToLegacyEmail(username) {
+    return `${normalizeUsername(username) || 'user'}@${LEGACY_EMAIL_DOMAIN}`;
+  }
+
+  async function signInWithUsername(username, password) {
+    const emails = [usernameToEmail(username), usernameToLegacyEmail(username)];
+    let lastError = null;
+    for (const email of [...new Set(emails)]) {
+      const result = await client.auth.signInWithPassword({ email, password });
+      if (!result.error) return result;
+      lastError = result.error;
+    }
+    return { error: lastError };
   }
 
   async function getSessionUser() {
@@ -593,8 +610,7 @@
         if (!username) {
           return jsonResponse({ success: false, error: 'ユーザー名を入力してください。' });
         }
-        const email = usernameToEmail(username);
-        const result = await client.auth.signInWithPassword({ email, password });
+        const result = await signInWithUsername(username, password);
         if (result.error) {
           return jsonResponse({ success: false, error: 'ユーザー名またはパスワードが違います。' });
         }
@@ -619,9 +635,21 @@
         if (!username) {
           return jsonResponse({ success: false, error: 'ユーザー名は英数字で入力してください。' });
         }
+        const profile = await ensureProfile(user);
+        const updates = {};
+        const email = usernameToEmail(username);
+        if (normalizeUsername(profile.username) !== username && user.email !== email) {
+          updates.email = email;
+        }
         if (password) {
-          const { error } = await client.auth.updateUser({ password });
+          updates.password = password;
+        }
+        if (Object.keys(updates).length > 0) {
+          const { data: updatedAuth, error } = await client.auth.updateUser(updates);
           if (error) throw error;
+          if (updates.email && updatedAuth?.user?.email !== email) {
+            throw new Error('ログインIDの変更が確認待ちになりました。Supabase Auth のメール変更確認を無効にしてから再度保存してください。');
+          }
         }
         const { error } = await client.from('profiles').update({ username }).eq('id', user.id);
         if (error) throw error;
