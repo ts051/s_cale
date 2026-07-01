@@ -431,6 +431,16 @@
             overflow: hidden;
             position: relative;
         }
+
+        .bottom-system-gesture-guard {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: calc(56px + env(safe-area-inset-bottom));
+            z-index: 50;
+            background: transparent;
+        }
         
         #calendar { 
             height: 100%; 
@@ -953,6 +963,7 @@
         <div class="calendar-container">
             <div id="calendar"></div>
         </div>
+        <div class="bottom-system-gesture-guard" id="bottomSystemGestureGuard" aria-hidden="true"></div>
 
         <div class="modal-overlay" id="overlay" onclick="closeAllModals()"></div>
 
@@ -1032,14 +1043,6 @@
         let lastSelectedLabelId = null;
         let calendarDataInitialized = false;
         let currentDataRangeKey = '';
-        const BOTTOM_SYSTEM_GESTURE_ZONE_PX = 160;
-        const BOTTOM_SYSTEM_GESTURE_MOVE_PX = 4;
-        const BOTTOM_SYSTEM_GESTURE_SUPPRESS_MS = 2500;
-        let bottomEdgeTouchStarted = false;
-        let bottomEdgeTouchStartY = 0;
-        let bottomEdgePointerStarted = false;
-        let bottomEdgePointerStartY = 0;
-        let ignoreBottomEdgeGestureUntil = 0;
 
         function getUserCacheIdentity(user) {
             if (!user) return 'anonymous';
@@ -1084,91 +1087,6 @@
 
         function dataCacheKey(url) {
             return `whiteTree:data:v3:${getUserCacheIdentity(currentUser)}:${url}`;
-        }
-
-        function getTouchPoint(event) {
-            if (!event) return null;
-            if (event.changedTouches && event.changedTouches.length > 0) return event.changedTouches[0];
-            if (event.touches && event.touches.length > 0) return event.touches[0];
-            return null;
-        }
-
-        function getViewportHeightForGesture() {
-            return (window.visualViewport && window.visualViewport.height) || window.innerHeight || document.documentElement.clientHeight;
-        }
-
-        function isBottomSystemGestureStart(touch) {
-            if (!touch) return false;
-            return touch.clientY >= getViewportHeightForGesture() - BOTTOM_SYSTEM_GESTURE_ZONE_PX;
-        }
-
-        function suppressBottomSystemGesture(event) {
-            ignoreBottomEdgeGestureUntil = Date.now() + BOTTOM_SYSTEM_GESTURE_SUPPRESS_MS;
-            if (event && event.cancelable) event.preventDefault();
-            if (event && typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
-            else if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
-        }
-
-        function trackBottomSystemGestureStart(event) {
-            const touch = getTouchPoint(event);
-            bottomEdgeTouchStarted = isBottomSystemGestureStart(touch);
-            bottomEdgeTouchStartY = bottomEdgeTouchStarted ? touch.clientY : 0;
-        }
-
-        function trackBottomSystemGestureMove(event) {
-            if (!bottomEdgeTouchStarted) return;
-            const touch = getTouchPoint(event);
-            if (touch && (bottomEdgeTouchStartY - touch.clientY) > BOTTOM_SYSTEM_GESTURE_MOVE_PX) {
-                suppressBottomSystemGesture(event);
-            }
-        }
-
-        function trackBottomSystemGestureEnd(event) {
-            if (!bottomEdgeTouchStarted) return;
-            const touch = getTouchPoint(event);
-            const movedUp = touch && (bottomEdgeTouchStartY - touch.clientY) > BOTTOM_SYSTEM_GESTURE_MOVE_PX;
-            if (movedUp) {
-                suppressBottomSystemGesture(event);
-            }
-            bottomEdgeTouchStarted = false;
-            bottomEdgeTouchStartY = 0;
-        }
-
-        function trackBottomSystemPointerStart(event) {
-            if (event.pointerType && event.pointerType !== 'touch') return;
-            bottomEdgePointerStarted = isBottomSystemGestureStart(event);
-            bottomEdgePointerStartY = bottomEdgePointerStarted ? event.clientY : 0;
-        }
-
-        function trackBottomSystemPointerMove(event) {
-            if (!bottomEdgePointerStarted || (event.pointerType && event.pointerType !== 'touch')) return;
-            if ((bottomEdgePointerStartY - event.clientY) > BOTTOM_SYSTEM_GESTURE_MOVE_PX) {
-                suppressBottomSystemGesture(event);
-            }
-        }
-
-        function trackBottomSystemPointerEnd(event) {
-            if (!bottomEdgePointerStarted || (event.pointerType && event.pointerType !== 'touch')) return;
-            if ((bottomEdgePointerStartY - event.clientY) > BOTTOM_SYSTEM_GESTURE_MOVE_PX) {
-                suppressBottomSystemGesture(event);
-            }
-            bottomEdgePointerStarted = false;
-            bottomEdgePointerStartY = 0;
-        }
-
-        function cancelBottomSystemGestureTracking() {
-            bottomEdgeTouchStarted = false;
-            bottomEdgeTouchStartY = 0;
-            bottomEdgePointerStarted = false;
-            bottomEdgePointerStartY = 0;
-        }
-
-        function shouldIgnoreBottomSystemGesture() {
-            return Date.now() < ignoreBottomEdgeGestureUntil;
-        }
-
-        function blockSuppressedBottomSystemClick(event) {
-            if (shouldIgnoreBottomSystemGesture()) suppressBottomSystemGesture(event);
         }
 
         function toDateParam(date) {
@@ -1789,6 +1707,7 @@
             const drawerEl = document.getElementById('drawer');
             const labelSectionEl = document.getElementById('labelSection');
             const settingsSectionEl = document.getElementById('settingsSection');
+            const bottomSystemGestureGuardEl = document.getElementById('bottomSystemGestureGuard');
 
             // 各種別画面・ドロワー内での上下スライド・ホイール操作の伝播を抑止してカレンダー移動の誤作動を防ぐ
             const stopPropagationFunc = function(e) { e.stopPropagation(); };
@@ -1804,15 +1723,11 @@
             settingsSectionEl.addEventListener('touchstart', stopPropagationFunc, { passive: true });
             settingsSectionEl.addEventListener('touchend', stopPropagationFunc, { passive: true });
 
-            document.addEventListener('touchstart', trackBottomSystemGestureStart, { passive: true, capture: true });
-            document.addEventListener('touchmove', trackBottomSystemGestureMove, { passive: false, capture: true });
-            document.addEventListener('touchend', trackBottomSystemGestureEnd, { passive: false, capture: true });
-            document.addEventListener('touchcancel', cancelBottomSystemGestureTracking, { passive: true, capture: true });
-            document.addEventListener('pointerdown', trackBottomSystemPointerStart, { passive: true, capture: true });
-            document.addEventListener('pointermove', trackBottomSystemPointerMove, { passive: false, capture: true });
-            document.addEventListener('pointerup', trackBottomSystemPointerEnd, { passive: false, capture: true });
-            document.addEventListener('pointercancel', cancelBottomSystemGestureTracking, { passive: true, capture: true });
-            document.addEventListener('click', blockSuppressedBottomSystemClick, { passive: false, capture: true });
+            ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'pointermove', 'pointerup', 'click'].forEach(eventName => {
+                bottomSystemGestureGuardEl.addEventListener(eventName, function(e) {
+                    e.stopPropagation();
+                }, { passive: true });
+            });
 
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
@@ -1825,7 +1740,6 @@
                 expandRows: true,
                 dayMaxEventRows: 5,
                 moreLinkClick: function(info) {
-                    if (shouldIgnoreBottomSystemGesture()) return false;
                     const y = info.date.getFullYear();
                     const m = String(info.date.getMonth() + 1).padStart(2, '0');
                     const d = String(info.date.getDate()).padStart(2, '0');
@@ -1872,7 +1786,6 @@
                 // JavaScript側で一括供給するため、古い eventSources 設定は排除
                 eventSources: [],
                 eventClick: function(info) {
-                    if (shouldIgnoreBottomSystemGesture()) return;
                     openDaySheet(info.event.startStr.split('T')[0]);
                     // 既存の予定データから繰り返し設定を復元してセット
                     const recurrenceVal = (info.event.extendedProps && info.event.extendedProps.recurrence) ? info.event.extendedProps.recurrence : '';
@@ -1880,7 +1793,7 @@
                 },
 
                 dateClick: function(info) {
-                    if (isAnimating || shouldIgnoreBottomSystemGesture()) return;
+                    if (isAnimating) return;
                     openDaySheet(info.dateStr);
                 },
 
@@ -1976,7 +1889,6 @@
             let touchEndY = 0;
             calendarEl.addEventListener('touchstart', function(e) { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
             calendarEl.addEventListener('touchend', function(e) {
-                if (shouldIgnoreBottomSystemGesture()) return;
                 touchEndY = e.changedTouches[0].screenY;
                 if (!isAnimating) {
                     const diff = touchStartY - touchEndY;
