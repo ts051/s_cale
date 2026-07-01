@@ -1032,11 +1032,13 @@
         let lastSelectedLabelId = null;
         let calendarDataInitialized = false;
         let currentDataRangeKey = '';
-        const BOTTOM_SYSTEM_GESTURE_ZONE_PX = 88;
-        const BOTTOM_SYSTEM_GESTURE_MOVE_PX = 8;
-        const BOTTOM_SYSTEM_GESTURE_SUPPRESS_MS = 900;
+        const BOTTOM_SYSTEM_GESTURE_ZONE_PX = 160;
+        const BOTTOM_SYSTEM_GESTURE_MOVE_PX = 4;
+        const BOTTOM_SYSTEM_GESTURE_SUPPRESS_MS = 2500;
         let bottomEdgeTouchStarted = false;
         let bottomEdgeTouchStartY = 0;
+        let bottomEdgePointerStarted = false;
+        let bottomEdgePointerStartY = 0;
         let ignoreBottomEdgeGestureUntil = 0;
 
         function getUserCacheIdentity(user) {
@@ -1100,10 +1102,25 @@
             return touch.clientY >= getViewportHeightForGesture() - BOTTOM_SYSTEM_GESTURE_ZONE_PX;
         }
 
+        function suppressBottomSystemGesture(event) {
+            ignoreBottomEdgeGestureUntil = Date.now() + BOTTOM_SYSTEM_GESTURE_SUPPRESS_MS;
+            if (event && event.cancelable) event.preventDefault();
+            if (event && typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+            else if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+        }
+
         function trackBottomSystemGestureStart(event) {
             const touch = getTouchPoint(event);
             bottomEdgeTouchStarted = isBottomSystemGestureStart(touch);
             bottomEdgeTouchStartY = bottomEdgeTouchStarted ? touch.clientY : 0;
+        }
+
+        function trackBottomSystemGestureMove(event) {
+            if (!bottomEdgeTouchStarted) return;
+            const touch = getTouchPoint(event);
+            if (touch && (bottomEdgeTouchStartY - touch.clientY) > BOTTOM_SYSTEM_GESTURE_MOVE_PX) {
+                suppressBottomSystemGesture(event);
+            }
         }
 
         function trackBottomSystemGestureEnd(event) {
@@ -1111,19 +1128,47 @@
             const touch = getTouchPoint(event);
             const movedUp = touch && (bottomEdgeTouchStartY - touch.clientY) > BOTTOM_SYSTEM_GESTURE_MOVE_PX;
             if (movedUp) {
-                ignoreBottomEdgeGestureUntil = Date.now() + BOTTOM_SYSTEM_GESTURE_SUPPRESS_MS;
+                suppressBottomSystemGesture(event);
             }
             bottomEdgeTouchStarted = false;
             bottomEdgeTouchStartY = 0;
         }
 
+        function trackBottomSystemPointerStart(event) {
+            if (event.pointerType && event.pointerType !== 'touch') return;
+            bottomEdgePointerStarted = isBottomSystemGestureStart(event);
+            bottomEdgePointerStartY = bottomEdgePointerStarted ? event.clientY : 0;
+        }
+
+        function trackBottomSystemPointerMove(event) {
+            if (!bottomEdgePointerStarted || (event.pointerType && event.pointerType !== 'touch')) return;
+            if ((bottomEdgePointerStartY - event.clientY) > BOTTOM_SYSTEM_GESTURE_MOVE_PX) {
+                suppressBottomSystemGesture(event);
+            }
+        }
+
+        function trackBottomSystemPointerEnd(event) {
+            if (!bottomEdgePointerStarted || (event.pointerType && event.pointerType !== 'touch')) return;
+            if ((bottomEdgePointerStartY - event.clientY) > BOTTOM_SYSTEM_GESTURE_MOVE_PX) {
+                suppressBottomSystemGesture(event);
+            }
+            bottomEdgePointerStarted = false;
+            bottomEdgePointerStartY = 0;
+        }
+
         function cancelBottomSystemGestureTracking() {
             bottomEdgeTouchStarted = false;
             bottomEdgeTouchStartY = 0;
+            bottomEdgePointerStarted = false;
+            bottomEdgePointerStartY = 0;
         }
 
         function shouldIgnoreBottomSystemGesture() {
             return Date.now() < ignoreBottomEdgeGestureUntil;
+        }
+
+        function blockSuppressedBottomSystemClick(event) {
+            if (shouldIgnoreBottomSystemGesture()) suppressBottomSystemGesture(event);
         }
 
         function toDateParam(date) {
@@ -1760,8 +1805,14 @@
             settingsSectionEl.addEventListener('touchend', stopPropagationFunc, { passive: true });
 
             document.addEventListener('touchstart', trackBottomSystemGestureStart, { passive: true, capture: true });
-            document.addEventListener('touchend', trackBottomSystemGestureEnd, { passive: true, capture: true });
+            document.addEventListener('touchmove', trackBottomSystemGestureMove, { passive: false, capture: true });
+            document.addEventListener('touchend', trackBottomSystemGestureEnd, { passive: false, capture: true });
             document.addEventListener('touchcancel', cancelBottomSystemGestureTracking, { passive: true, capture: true });
+            document.addEventListener('pointerdown', trackBottomSystemPointerStart, { passive: true, capture: true });
+            document.addEventListener('pointermove', trackBottomSystemPointerMove, { passive: false, capture: true });
+            document.addEventListener('pointerup', trackBottomSystemPointerEnd, { passive: false, capture: true });
+            document.addEventListener('pointercancel', cancelBottomSystemGestureTracking, { passive: true, capture: true });
+            document.addEventListener('click', blockSuppressedBottomSystemClick, { passive: false, capture: true });
 
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
