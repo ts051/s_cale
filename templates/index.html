@@ -227,7 +227,7 @@
         .app-bar {
             display: flex;
             align-items: center;
-            padding: calc(6px + env(safe-area-inset-top)) 12px 0px 12px;
+            padding: env(safe-area-inset-top) 12px 0px 12px;
             background-color: transparent;
             height: auto;
             box-sizing: border-box;
@@ -426,10 +426,11 @@
         /* カレンダー表示エリア */
         .calendar-container {
             flex: 1;
-            padding: 4px;
+            padding: 2px 4px calc(58px + env(safe-area-inset-bottom)) 4px;
             background-color: #ffffff;
             overflow: hidden;
             position: relative;
+            box-sizing: border-box;
         }
 
         .bottom-system-gesture-guard {
@@ -477,8 +478,8 @@
         }
         
         .fc .fc-toolbar { 
-            margin-bottom: 4px !important; 
-            padding: calc(4px + env(safe-area-inset-top)) 12px 4px 12px; /* 上部にセーフエリアを追加 */
+            margin-bottom: 2px !important; 
+            padding: 2px 12px 2px 12px;
             display: flex; 
             align-items: center; 
             justify-content: space-between; 
