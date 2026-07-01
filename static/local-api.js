@@ -47,8 +47,88 @@
     return `${normalizeUsername(username) || 'user'}@${LEGACY_EMAIL_DOMAIN}`;
   }
 
+  function emailLocalPart(email) {
+    return normalizeUsername(String(email || '').split('@')[0]);
+  }
+
+  function isMissingLoginIdsTable(error) {
+    const message = String(error?.message || '').toLowerCase();
+    return error?.code === '42P01'
+      || error?.code === 'PGRST205'
+      || message.includes('relation "public.login_ids" does not exist')
+      || (message.includes('schema cache') && message.includes('login_ids'))
+      || (message.includes('could not find') && message.includes('login_ids'));
+  }
+
+  async function lookupLoginId(username) {
+    try {
+      const { data, error } = await client
+        .from('login_ids')
+        .select('auth_email, is_active')
+        .eq('login_id', normalizeUsername(username))
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return { email: null, blocked: false };
+      return { email: data.is_active ? data.auth_email : null, blocked: !data.is_active };
+    } catch (error) {
+      if (!isMissingLoginIdsTable(error)) console.warn('Login ID lookup failed:', error);
+      return { email: null, blocked: false };
+    }
+  }
+
+  async function replaceLoginId(user, loginId, previousLoginId, required) {
+    const normalized = normalizeUsername(loginId);
+    if (!normalized) return;
+
+    const authEmail = user.email || usernameToLegacyEmail(normalized);
+    const rows = [{
+      login_id: normalized,
+      user_id: user.id,
+      auth_email: authEmail,
+      is_active: true
+    }];
+
+    for (const oldLoginId of [previousLoginId, emailLocalPart(user.email)]) {
+      const oldNormalized = normalizeUsername(oldLoginId);
+      if (oldNormalized && oldNormalized !== normalized && !rows.some(row => row.login_id === oldNormalized)) {
+        rows.push({
+          login_id: oldNormalized,
+          user_id: user.id,
+          auth_email: null,
+          is_active: false
+        });
+      }
+    }
+
+    const { error: upsertError } = await client
+      .from('login_ids')
+      .upsert(rows, { onConflict: 'login_id' });
+    if (upsertError) {
+      if (required && isMissingLoginIdsTable(upsertError)) {
+        throw new Error('ログインID管理テーブルが未設定です。supabase/schema.sql を Supabase に適用してください。');
+      }
+      if (required || !isMissingLoginIdsTable(upsertError)) throw upsertError;
+      return;
+    }
+
+    const { error: retireError } = await client
+      .from('login_ids')
+      .update({ auth_email: null, is_active: false })
+      .eq('user_id', user.id)
+      .neq('login_id', normalized);
+    if (retireError) {
+      if (required && isMissingLoginIdsTable(retireError)) {
+        throw new Error('ログインID管理テーブルが未設定です。supabase/schema.sql を Supabase に適用してください。');
+      }
+      if (required || !isMissingLoginIdsTable(retireError)) throw retireError;
+    }
+  }
+
   async function signInWithUsername(username, password) {
-    const emails = [usernameToEmail(username), usernameToLegacyEmail(username)];
+    const loginId = await lookupLoginId(username);
+    if (loginId.blocked) return { error: new Error('Login ID has been changed.') };
+
+    const emails = [loginId.email, usernameToEmail(username), usernameToLegacyEmail(username)].filter(Boolean);
     let lastError = null;
     for (const email of [...new Set(emails)]) {
       const result = await client.auth.signInWithPassword({ email, password });
@@ -617,6 +697,7 @@
 
         const user = result.data.user || result.data.session?.user;
         const profile = await ensureProfile(user, username);
+        await replaceLoginId(user, profile.username, username, false);
         await ensureDefaultLabels(user.id);
         return jsonResponse({ success: true, user_id: user.id, username: profile.username, week_start: profile.week_start });
       }
@@ -636,21 +717,11 @@
           return jsonResponse({ success: false, error: 'ユーザー名は英数字で入力してください。' });
         }
         const profile = await ensureProfile(user);
-        const updates = {};
-        const email = usernameToEmail(username);
-        if (normalizeUsername(profile.username) !== username && user.email !== email) {
-          updates.email = email;
-        }
         if (password) {
-          updates.password = password;
-        }
-        if (Object.keys(updates).length > 0) {
-          const { data: updatedAuth, error } = await client.auth.updateUser(updates);
+          const { error } = await client.auth.updateUser({ password });
           if (error) throw error;
-          if (updates.email && updatedAuth?.user?.email !== email) {
-            throw new Error('ログインIDの変更が確認待ちになりました。Supabase Auth のメール変更確認を無効にしてから再度保存してください。');
-          }
         }
+        await replaceLoginId(user, username, profile.username, true);
         const { error } = await client.from('profiles').update({ username }).eq('id', user.id);
         if (error) throw error;
         return jsonResponse({ success: true, username });
