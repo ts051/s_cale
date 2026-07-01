@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'whitetree-shell-v43';
+const CACHE_VERSION = 'whitetree-shell-v44';
 const APP_SHELL = [
   './',
   './static/manifest.webmanifest?v=pwa-start-1',
