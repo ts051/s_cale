@@ -1032,6 +1032,12 @@
         let lastSelectedLabelId = null;
         let calendarDataInitialized = false;
         let currentDataRangeKey = '';
+        const BOTTOM_SYSTEM_GESTURE_ZONE_PX = 88;
+        const BOTTOM_SYSTEM_GESTURE_MOVE_PX = 8;
+        const BOTTOM_SYSTEM_GESTURE_SUPPRESS_MS = 900;
+        let bottomEdgeTouchStarted = false;
+        let bottomEdgeTouchStartY = 0;
+        let ignoreBottomEdgeGestureUntil = 0;
 
         function getUserCacheIdentity(user) {
             if (!user) return 'anonymous';
@@ -1076,6 +1082,48 @@
 
         function dataCacheKey(url) {
             return `whiteTree:data:v3:${getUserCacheIdentity(currentUser)}:${url}`;
+        }
+
+        function getTouchPoint(event) {
+            if (!event) return null;
+            if (event.changedTouches && event.changedTouches.length > 0) return event.changedTouches[0];
+            if (event.touches && event.touches.length > 0) return event.touches[0];
+            return null;
+        }
+
+        function getViewportHeightForGesture() {
+            return (window.visualViewport && window.visualViewport.height) || window.innerHeight || document.documentElement.clientHeight;
+        }
+
+        function isBottomSystemGestureStart(touch) {
+            if (!touch) return false;
+            return touch.clientY >= getViewportHeightForGesture() - BOTTOM_SYSTEM_GESTURE_ZONE_PX;
+        }
+
+        function trackBottomSystemGestureStart(event) {
+            const touch = getTouchPoint(event);
+            bottomEdgeTouchStarted = isBottomSystemGestureStart(touch);
+            bottomEdgeTouchStartY = bottomEdgeTouchStarted ? touch.clientY : 0;
+        }
+
+        function trackBottomSystemGestureEnd(event) {
+            if (!bottomEdgeTouchStarted) return;
+            const touch = getTouchPoint(event);
+            const movedUp = touch && (bottomEdgeTouchStartY - touch.clientY) > BOTTOM_SYSTEM_GESTURE_MOVE_PX;
+            if (movedUp) {
+                ignoreBottomEdgeGestureUntil = Date.now() + BOTTOM_SYSTEM_GESTURE_SUPPRESS_MS;
+            }
+            bottomEdgeTouchStarted = false;
+            bottomEdgeTouchStartY = 0;
+        }
+
+        function cancelBottomSystemGestureTracking() {
+            bottomEdgeTouchStarted = false;
+            bottomEdgeTouchStartY = 0;
+        }
+
+        function shouldIgnoreBottomSystemGesture() {
+            return Date.now() < ignoreBottomEdgeGestureUntil;
         }
 
         function toDateParam(date) {
@@ -1711,6 +1759,10 @@
             settingsSectionEl.addEventListener('touchstart', stopPropagationFunc, { passive: true });
             settingsSectionEl.addEventListener('touchend', stopPropagationFunc, { passive: true });
 
+            document.addEventListener('touchstart', trackBottomSystemGestureStart, { passive: true, capture: true });
+            document.addEventListener('touchend', trackBottomSystemGestureEnd, { passive: true, capture: true });
+            document.addEventListener('touchcancel', cancelBottomSystemGestureTracking, { passive: true, capture: true });
+
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'ja',
@@ -1722,6 +1774,7 @@
                 expandRows: true,
                 dayMaxEventRows: 5,
                 moreLinkClick: function(info) {
+                    if (shouldIgnoreBottomSystemGesture()) return false;
                     const y = info.date.getFullYear();
                     const m = String(info.date.getMonth() + 1).padStart(2, '0');
                     const d = String(info.date.getDate()).padStart(2, '0');
@@ -1768,13 +1821,17 @@
                 // JavaScript側で一括供給するため、古い eventSources 設定は排除
                 eventSources: [],
                 eventClick: function(info) {
+                    if (shouldIgnoreBottomSystemGesture()) return;
                     openDaySheet(info.event.startStr.split('T')[0]);
                     // 既存の予定データから繰り返し設定を復元してセット
                     const recurrenceVal = (info.event.extendedProps && info.event.extendedProps.recurrence) ? info.event.extendedProps.recurrence : '';
                     document.getElementById('eventRecurrence').value = recurrenceVal;
                 },
 
-                dateClick: function(info) { if (isAnimating) return; openDaySheet(info.dateStr); },
+                dateClick: function(info) {
+                    if (isAnimating || shouldIgnoreBottomSystemGesture()) return;
+                    openDaySheet(info.dateStr);
+                },
 
                 eventClassNames: function(arg) {
                     if (arg.event.extendedProps.is_holiday) return ['fc-event-holiday'];
@@ -1868,6 +1925,7 @@
             let touchEndY = 0;
             calendarEl.addEventListener('touchstart', function(e) { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
             calendarEl.addEventListener('touchend', function(e) {
+                if (shouldIgnoreBottomSystemGesture()) return;
                 touchEndY = e.changedTouches[0].screenY;
                 if (!isAnimating) {
                     const diff = touchStartY - touchEndY;
