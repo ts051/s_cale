@@ -160,10 +160,20 @@
             background-color: #1f1f1f;
             border-color: #3c4043;
         }
-        body.dark-mode .luna-tree-muted, body.dark-mode .luna-tree-row-label, body.dark-mode .luna-tree-stat-label {
+        body.dark-mode .luna-tree-muted, body.dark-mode .luna-tree-row-label, body.dark-mode .luna-tree-stat-label,
+        body.dark-mode .luna-tree-field-label {
             color: #9aa0a6;
         }
         body.dark-mode .luna-tree-stat-value {
+            color: #e8eaed;
+        }
+        body.dark-mode .luna-tree-clear {
+            background: #2d2d2d;
+            border-color: #3c4043;
+            color: #e8eaed;
+        }
+        body.dark-mode .luna-tree-period {
+            background: #2d2d2d;
             color: #e8eaed;
         }
 
@@ -695,25 +705,35 @@
         }
         .luna-tree-row {
             display: grid;
-            grid-template-columns: 58px minmax(148px, 1fr) minmax(148px, 1fr) 70px 42px;
-            gap: 8px;
-            align-items: center;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: start;
             border: 1px solid #eef0f2;
-            border-radius: 6px;
-            padding: 8px;
-            margin-bottom: 8px;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
             background: #ffffff;
             box-sizing: border-box;
+            box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
         }
         .luna-tree-row-label {
             color: #5f6368;
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 36px;
         }
         .luna-tree-field {
             display: flex;
             flex-direction: column;
             gap: 4px;
+            min-width: 0;
+        }
+        .luna-tree-field-grid {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            width: 100%;
             min-width: 0;
         }
         .luna-tree-field-label {
@@ -722,6 +742,14 @@
             line-height: 1;
         }
         .luna-tree-period {
+            grid-column: 1 / -1;
+            justify-self: start;
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #f1f3f4;
             font-size: 13px;
             font-weight: 600;
             color: #5f6368;
@@ -731,38 +759,44 @@
             width: 36px;
             height: 36px;
             border: 1px solid #dadce0;
-            border-radius: 4px;
-            background: transparent;
+            border-radius: 999px;
+            background: #ffffff;
             color: #5f6368;
             cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            font-size: 18px;
+            box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1);
         }
         @media (max-width: 560px) {
             .luna-tree-stats {
                 grid-template-columns: 1fr;
             }
             .luna-tree-row {
-                grid-template-columns: 44px minmax(0, 1fr) 36px;
-                gap: 8px;
-                padding: 10px 8px;
-                align-items: center;
+                grid-template-columns: minmax(0, 1fr) 36px;
+                gap: 10px;
+                padding: 12px;
             }
             .luna-tree-input {
                 min-width: 0;
                 width: 100%;
                 font-size: 13px;
                 padding: 7px 6px;
+                -webkit-appearance: none;
+                appearance: none;
             }
             .luna-tree-row-label {
                 grid-column: 1;
-                grid-row: 1 / span 3;
+                grid-row: 1;
+                line-height: 36px;
             }
-            .luna-tree-start-field, .luna-tree-end-field, .luna-tree-period {
-                grid-column: 2;
+            .luna-tree-field-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
             }
             .luna-tree-clear {
-                grid-column: 3;
-                grid-row: 1 / span 3;
-                align-self: center;
+                grid-column: 2;
+                grid-row: 1;
             }
         }
 
@@ -1723,16 +1757,18 @@
                 const periodText = startDate && endDate ? `${getLunaTreePeriodLength(startDate, endDate)}日間` : '-';
                 row.innerHTML = `
                     <div class="luna-tree-row-label">${index + 1}月</div>
-                    <label class="luna-tree-field luna-tree-start-field">
-                        <span class="luna-tree-field-label">開始</span>
-                        <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onchange="updateLunaTreeRowPeriod(this)">
-                    </label>
-                    <label class="luna-tree-field luna-tree-end-field">
-                        <span class="luna-tree-field-label">終了</span>
-                        <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onchange="updateLunaTreeRowPeriod(this)">
-                    </label>
+                    <button type="button" class="luna-tree-clear" title="クリア" aria-label="${index + 1}月をクリア" onclick="clearLunaTreeRow(this)">×</button>
+                    <div class="luna-tree-field-grid">
+                        <label class="luna-tree-field luna-tree-start-field">
+                            <span class="luna-tree-field-label">開始</span>
+                            <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onchange="updateLunaTreeRowPeriod(this)">
+                        </label>
+                        <label class="luna-tree-field luna-tree-end-field">
+                            <span class="luna-tree-field-label">終了</span>
+                            <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onchange="updateLunaTreeRowPeriod(this)">
+                        </label>
+                    </div>
                     <div class="luna-tree-period">${periodText}</div>
-                    <button type="button" class="luna-tree-clear" title="クリア" onclick="clearLunaTreeRow(this)">×</button>
                 `;
                 container.appendChild(row);
             }
