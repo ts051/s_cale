@@ -101,7 +101,8 @@
         body.dark-mode .form-group label {
             color: #9aa0a6;
         }
-        body.dark-mode .form-group input[type="text"], body.dark-mode .form-group input[type="password"] {
+        body.dark-mode .form-group input[type="text"], body.dark-mode .form-group input[type="password"],
+        body.dark-mode .luna-tree-input, body.dark-mode .luna-tree-select {
             background-color: #2d2d2d;
             border: 1px solid #3c4043;
             color: #e8eaed;
@@ -154,6 +155,16 @@
         body.dark-mode .fc .fc-daygrid-more-link {
             background: #2d2d2d;
             color: #e8eaed !important;
+        }
+        body.dark-mode .luna-tree-panel, body.dark-mode .luna-tree-row, body.dark-mode .luna-tree-stats {
+            background-color: #1f1f1f;
+            border-color: #3c4043;
+        }
+        body.dark-mode .luna-tree-muted, body.dark-mode .luna-tree-row-label, body.dark-mode .luna-tree-stat-label {
+            color: #9aa0a6;
+        }
+        body.dark-mode .luna-tree-stat-value {
+            color: #e8eaed;
         }
 
         /* SPA用セクション制御 */
@@ -616,12 +627,113 @@
             border-left: none !important;
             box-shadow: none !important;
         }
+        .fc-event-lunatree {
+            background-color: #d15b86 !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
         body.dark-mode .fc-event-holiday {
             background-color: #b31412 !important;
             color: #ffffff !important;
             border: none !important;
             border-left: none !important;
             box-shadow: none !important;
+        }
+        body.dark-mode .fc-event-lunatree {
+            background-color: #b94f76 !important;
+            color: #ffffff !important;
+        }
+
+        .luna-tree-page {
+            width: 100%;
+            max-width: 760px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        .luna-tree-panel {
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            background: #ffffff;
+            padding: 14px;
+            margin-bottom: 14px;
+            box-sizing: border-box;
+        }
+        .luna-tree-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .luna-tree-input, .luna-tree-select {
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 14px;
+            color: #3c4043;
+            background: #ffffff;
+            box-sizing: border-box;
+        }
+        .luna-tree-year { width: 104px; }
+        .luna-tree-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            border: 1px solid #e8eaed;
+            border-radius: 8px;
+            background: #f8f9fa;
+            padding: 10px;
+        }
+        .luna-tree-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #3c4043;
+        }
+        .luna-tree-stat-label, .luna-tree-muted {
+            font-size: 12px;
+            color: #70757a;
+        }
+        .luna-tree-row {
+            display: grid;
+            grid-template-columns: 72px minmax(126px, 1fr) 86px 42px;
+            gap: 8px;
+            align-items: center;
+            border: 1px solid #eef0f2;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 8px;
+            background: #ffffff;
+            box-sizing: border-box;
+        }
+        .luna-tree-row-label {
+            color: #5f6368;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .luna-tree-clear {
+            width: 36px;
+            height: 36px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            background: transparent;
+            color: #5f6368;
+            cursor: pointer;
+        }
+        @media (max-width: 560px) {
+            .luna-tree-stats {
+                grid-template-columns: 1fr;
+            }
+            .luna-tree-row {
+                grid-template-columns: 52px minmax(0, 1fr) 72px 36px;
+                gap: 6px;
+                padding: 7px;
+            }
+            .luna-tree-input {
+                min-width: 0;
+                width: 100%;
+                font-size: 13px;
+                padding: 7px 5px;
+            }
         }
 
 
@@ -825,7 +937,7 @@
         body.dark-mode .offline-status { color: #fdd663; background-color: #3c3520; }
 
         /* ログイン確認が完了するまでのチラつき防止用初期設定 */
-        #loginSection, #settingsSection, #labelSection {
+        #loginSection, #settingsSection, #labelSection, #lunaTreeSection {
             display: none;
         }
     </style>
@@ -899,6 +1011,57 @@
         </div>
     </div>
 
+    <div id="lunaTreeSection" class="spa-section settings-container" style="overflow-y: auto; overflow-x: hidden; align-items: flex-start;">
+        <div class="luna-tree-page">
+            <div class="spa-card-wide" style="max-width: 760px; margin-top: 20px; margin-bottom: 20px; box-sizing: border-box;">
+                <h2>LunaTree</h2>
+                <div class="alert-text" id="lunaTreeAlert"></div>
+
+                <div class="luna-tree-toolbar">
+                    <label class="luna-tree-muted" for="lunaTreeYear">入力する年</label>
+                    <input type="number" id="lunaTreeYear" class="luna-tree-input luna-tree-year" min="1900" max="2100" step="1" onchange="handleLunaTreeYearChange()">
+                    <button type="button" class="btn btn-secondary" onclick="shiftLunaTreeYear(-1)">前年</button>
+                    <button type="button" class="btn btn-secondary" onclick="shiftLunaTreeYear(1)">翌年</button>
+                </div>
+
+                <div class="luna-tree-stats" id="lunaTreeStats">
+                    <div>
+                        <div class="luna-tree-stat-value" id="lunaTreeElapsed">-</div>
+                        <div class="luna-tree-stat-label">前回開始日から</div>
+                    </div>
+                    <div>
+                        <div class="luna-tree-stat-value" id="lunaTreeAverageCycle">-</div>
+                        <div class="luna-tree-stat-label">年間の平均周期</div>
+                    </div>
+                    <div>
+                        <div class="luna-tree-stat-value" id="lunaTreeAveragePeriod">-</div>
+                        <div class="luna-tree-stat-label">年間の平均生理期間</div>
+                    </div>
+                </div>
+
+                <div class="luna-tree-panel" style="margin-top: 14px;">
+                    <div class="luna-tree-muted" style="margin-bottom: 10px;">カレンダー表示設定</div>
+                    <div class="drawer-row" style="gap: 16px; margin-bottom: 10px;">
+                        <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="lunaTreeScope" value="shared" checked onchange="handleLunaTreeScopeChange()" style="transform: scale(1.1); margin-right: 4px;"> 共有</label>
+                        <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="lunaTreeScope" value="private" onchange="handleLunaTreeScopeChange()" style="transform: scale(1.1); margin-right: 4px;"> 個人</label>
+                    </div>
+                    <label class="luna-tree-muted" for="lunaTreeLabelId">ラベル</label>
+                    <select id="lunaTreeLabelId" class="luna-tree-select" style="width: 100%; margin-top: 5px;"></select>
+                </div>
+
+                <div class="luna-tree-panel">
+                    <div class="luna-tree-muted" style="margin-bottom: 10px;">月ごとの生理開始日と生理期間</div>
+                    <div id="lunaTreeMonthList"></div>
+                </div>
+
+                <div class="settings-btns">
+                    <button type="button" class="btn-cancel" onclick="showSection('calendar')">カレンダーに戻る</button>
+                    <button type="button" class="btn-block btn-save" onclick="saveLunaTree()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="calendarSection" class="spa-section">
         <div class="app-bar">
             <div id="successFlashContainer"></div>
@@ -934,6 +1097,7 @@
                     <span class="menu-control-text">ダークモード</span>
                     <input type="checkbox" id="drawerDarkMode" onchange="handleDrawerDarkModeChange()" style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
                 </label>
+                <button class="btn-sidebar" onclick="openLunaTreeSPA()">LunaTree</button>
                 <button class="btn-sidebar" onclick="openLabelSPA()">ラベル設定</button>
                 <button class="btn-sidebar" onclick="openSettingsSPA()">アカウント設定</button>
             </div>
@@ -1047,6 +1211,9 @@
         let lastSelectedLabelId = null;
         let calendarDataInitialized = false;
         let currentDataRangeKey = '';
+        let lunaTreeEvents = [];
+        const LUNA_TREE_TITLE = '🚺';
+        const LUNA_TREE_MEMO_PREFIX = 'LunaTree:';
 
         function getUserCacheIdentity(user) {
             if (!user) return 'anonymous';
@@ -1171,6 +1338,7 @@
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('settingsSection').style.display = 'none';
             document.getElementById('labelSection').style.display = 'none';
+            document.getElementById('lunaTreeSection').style.display = 'none';
             document.getElementById('calendarSection').style.display = 'none';
 
             if (sectionId === 'calendar') {
@@ -1184,6 +1352,8 @@
                 document.getElementById('settingsSection').style.display = 'flex';
             } else if (sectionId === 'label') {
                 document.getElementById('labelSection').style.display = 'flex';
+            } else if (sectionId === 'lunaTree') {
+                document.getElementById('lunaTreeSection').style.display = 'flex';
             }
         }
 
@@ -1317,6 +1487,297 @@
             toggleDrawer(false);
             renderLabelManagement();
             showSection('label');
+        }
+
+        function openLunaTreeSPA() {
+            toggleDrawer(false);
+            document.getElementById('lunaTreeAlert').innerText = '';
+            if (!document.getElementById('lunaTreeYear').value) {
+                document.getElementById('lunaTreeYear').value = String(new Date().getFullYear());
+            }
+            showSection('lunaTree');
+            loadLunaTreePage();
+        }
+
+        function lunaTreeMemo(month, periodLength) {
+            return `${LUNA_TREE_MEMO_PREFIX}${JSON.stringify({ month, period_length: periodLength, version: 1 })}`;
+        }
+
+        function parseLunaTreeMeta(event) {
+            const memo = event?.extendedProps?.memo || event?.memo || '';
+            if (!String(memo).startsWith(LUNA_TREE_MEMO_PREFIX)) return null;
+            try {
+                const parsed = JSON.parse(String(memo).slice(LUNA_TREE_MEMO_PREFIX.length));
+                return {
+                    month: parsed.month || (event.start || '').slice(0, 7),
+                    periodLength: Number(parsed.period_length) || getLunaTreeDuration(event) || 1
+                };
+            } catch (error) {
+                return {
+                    month: (event.start || '').slice(0, 7),
+                    periodLength: getLunaTreeDuration(event) || 1
+                };
+            }
+        }
+
+        function isLunaTreeEvent(event) {
+            return event?.title === LUNA_TREE_TITLE && parseLunaTreeMeta(event) !== null;
+        }
+
+        function getLunaTreeEventId(event) {
+            return event?.extendedProps?.original_id || event?.id;
+        }
+
+        function parseDateOnly(dateStr) {
+            const parts = String(dateStr || '').split('T')[0].split('-').map(Number);
+            if (parts.length !== 3 || parts.some(part => !Number.isFinite(part))) return null;
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
+
+        function dateDiffDays(startStr, endStr) {
+            const start = parseDateOnly(startStr);
+            const end = parseDateOnly(endStr);
+            if (!start || !end) return 0;
+            return Math.round((end.getTime() - start.getTime()) / 86400000);
+        }
+
+        function getLunaTreeDuration(event) {
+            if (!event?.start) return 0;
+            const end = event.end || addDaysToDateStr(event.start, 1);
+            return Math.max(1, dateDiffDays(event.start, end));
+        }
+
+        function lunaTreeMonthKey(year, monthIndex) {
+            return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+        }
+
+        function average(values) {
+            const nums = values.filter(value => Number.isFinite(value) && value > 0);
+            if (nums.length === 0) return null;
+            return Math.round((nums.reduce((sum, value) => sum + value, 0) / nums.length) * 10) / 10;
+        }
+
+        function formatLunaTreeAverage(value) {
+            return value === null ? '-' : `${value}日`;
+        }
+
+        function getOwnedLunaTreeEvents() {
+            return lunaTreeEvents.filter(event => isLunaTreeEvent(event) && event.extendedProps?.is_mine !== false);
+        }
+
+        function getLunaTreeYear() {
+            const input = document.getElementById('lunaTreeYear');
+            const year = Number(input.value) || new Date().getFullYear();
+            input.value = String(year);
+            return year;
+        }
+
+        function getLunaTreeRangeUrl(year) {
+            const start = `${year - 1}-01-01`;
+            const end = `${year + 1}-01-01`;
+            return `/api/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+        }
+
+        function loadLunaTreeEvents(year) {
+            return fetchJsonWithCache(getLunaTreeRangeUrl(year))
+                .then(events => {
+                    lunaTreeEvents = Array.isArray(events) ? events.filter(isLunaTreeEvent) : [];
+                });
+        }
+
+        function handleLunaTreeYearChange() {
+            loadLunaTreePage();
+        }
+
+        function shiftLunaTreeYear(amount) {
+            const input = document.getElementById('lunaTreeYear');
+            input.value = String(getLunaTreeYear() + amount);
+            loadLunaTreePage();
+        }
+
+        function handleLunaTreeScopeChange() {
+            populateLunaTreeLabelSelect();
+        }
+
+        function populateLunaTreeLabelSelect(selectedLabelId) {
+            const select = document.getElementById('lunaTreeLabelId');
+            const isShared = document.querySelector('input[name="lunaTreeScope"]:checked')?.value !== 'private';
+            const labels = cachedLabels
+                .filter(label => isShared ? label.is_shared : !label.is_shared)
+                .sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999) || a.id - b.id);
+            select.innerHTML = '';
+            labels.forEach(label => {
+                const option = document.createElement('option');
+                option.value = label.id;
+                option.textContent = label.name;
+                select.appendChild(option);
+            });
+            if (selectedLabelId && labels.some(label => String(label.id) === String(selectedLabelId))) {
+                select.value = String(selectedLabelId);
+            } else if (labels.length > 0) {
+                select.value = String(labels[0].id);
+            }
+        }
+
+        function syncLunaTreeControlsFromEvents() {
+            const owned = getOwnedLunaTreeEvents().sort((a, b) => String(b.start).localeCompare(String(a.start)));
+            const latest = owned[0];
+            const isShared = latest ? latest.extendedProps?.is_shared !== false : true;
+            document.querySelector(`input[name="lunaTreeScope"][value="${isShared ? 'shared' : 'private'}"]`).checked = true;
+            populateLunaTreeLabelSelect(latest?.extendedProps?.label_id);
+        }
+
+        function renderLunaTreeStats(year) {
+            const owned = getOwnedLunaTreeEvents()
+                .map(event => ({ event, meta: parseLunaTreeMeta(event), start: String(event.start || '').split('T')[0] }))
+                .filter(item => item.meta && item.start)
+                .sort((a, b) => a.start.localeCompare(b.start));
+            const inYear = owned.filter(item => item.start.slice(0, 4) === String(year));
+            const averagePeriod = average(inYear.map(item => item.meta.periodLength));
+            const cycles = [];
+            for (let i = 1; i < owned.length; i += 1) {
+                if (owned[i].start.slice(0, 4) === String(year)) {
+                    cycles.push(dateDiffDays(owned[i - 1].start, owned[i].start));
+                }
+            }
+            const today = toDateParam(new Date());
+            const latest = owned.filter(item => item.start <= today).pop();
+            document.getElementById('lunaTreeElapsed').innerText = latest ? `${dateDiffDays(latest.start, today)}日` : '-';
+            document.getElementById('lunaTreeAverageCycle').innerText = formatLunaTreeAverage(average(cycles));
+            document.getElementById('lunaTreeAveragePeriod').innerText = formatLunaTreeAverage(averagePeriod);
+        }
+
+        function renderLunaTreeRows(year) {
+            const container = document.getElementById('lunaTreeMonthList');
+            const byMonth = new Map();
+            getOwnedLunaTreeEvents()
+                .sort((a, b) => String(a.start).localeCompare(String(b.start)))
+                .forEach(event => {
+                    const meta = parseLunaTreeMeta(event);
+                    const month = meta?.month || String(event.start || '').slice(0, 7);
+                    if (month.slice(0, 4) === String(year) && !byMonth.has(month)) {
+                        byMonth.set(month, { event, meta });
+                    }
+                });
+
+            container.innerHTML = '';
+            for (let index = 0; index < 12; index += 1) {
+                const month = lunaTreeMonthKey(year, index);
+                const entry = byMonth.get(month);
+                const row = document.createElement('div');
+                row.className = 'luna-tree-row';
+                row.dataset.month = month;
+                row.dataset.eventId = entry ? getLunaTreeEventId(entry.event) : '';
+                row.innerHTML = `
+                    <div class="luna-tree-row-label">${index + 1}月</div>
+                    <input type="date" class="luna-tree-input luna-tree-start" value="${entry ? String(entry.event.start).split('T')[0] : ''}">
+                    <input type="number" class="luna-tree-input luna-tree-length" min="1" max="31" step="1" value="${entry ? entry.meta.periodLength : 5}" aria-label="${index + 1}月の生理期間">
+                    <button type="button" class="luna-tree-clear" title="クリア" onclick="clearLunaTreeRow(this)">×</button>
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        function renderLunaTreePage() {
+            const year = getLunaTreeYear();
+            syncLunaTreeControlsFromEvents();
+            renderLunaTreeStats(year);
+            renderLunaTreeRows(year);
+        }
+
+        function loadLunaTreePage() {
+            const alertDiv = document.getElementById('lunaTreeAlert');
+            alertDiv.innerText = '';
+            const year = getLunaTreeYear();
+            Promise.all([loadLabels(), loadLunaTreeEvents(year)])
+                .then(renderLunaTreePage)
+                .catch(error => {
+                    console.error(error);
+                    alertDiv.innerText = 'LunaTreeを読み込めませんでした。';
+                });
+        }
+
+        function clearLunaTreeRow(button) {
+            const row = button.closest('.luna-tree-row');
+            row.querySelector('.luna-tree-start').value = '';
+        }
+
+        async function saveLunaTree() {
+            const alertDiv = document.getElementById('lunaTreeAlert');
+            alertDiv.innerText = '';
+            const year = getLunaTreeYear();
+            const isShared = document.querySelector('input[name="lunaTreeScope"]:checked')?.value !== 'private';
+            const labelId = document.getElementById('lunaTreeLabelId').value || null;
+            const rows = Array.from(document.querySelectorAll('.luna-tree-row'));
+            const existingByMonth = new Map();
+
+            getOwnedLunaTreeEvents().forEach(event => {
+                const meta = parseLunaTreeMeta(event);
+                const month = meta?.month || String(event.start || '').slice(0, 7);
+                if (month.slice(0, 4) !== String(year)) return;
+                if (!existingByMonth.has(month)) existingByMonth.set(month, []);
+                existingByMonth.get(month).push(event);
+            });
+
+            const requests = [];
+            for (const row of rows) {
+                const month = row.dataset.month;
+                const start = row.querySelector('.luna-tree-start').value;
+                const periodLength = Math.max(1, Math.min(31, Number(row.querySelector('.luna-tree-length').value) || 1));
+                const existing = existingByMonth.get(month) || [];
+
+                if (start && start.slice(0, 7) !== month) {
+                    alertDiv.innerText = `${Number(month.slice(5, 7))}月の開始日は同じ月の日付を選んでください。`;
+                    return;
+                }
+
+                if (!start) {
+                    existing.forEach(event => {
+                        requests.push(fetch(`/api/events/${getLunaTreeEventId(event)}`, { method: 'DELETE' }));
+                    });
+                    continue;
+                }
+
+                const payload = {
+                    title: LUNA_TREE_TITLE,
+                    start,
+                    end: addDaysToDateStr(start, 1),
+                    memo: lunaTreeMemo(month, periodLength),
+                    allDay: true,
+                    is_all_day: true,
+                    label_id: labelId,
+                    is_shared: isShared,
+                    recurrence: ''
+                };
+                const primary = existing[0];
+                const url = primary ? `/api/events/${getLunaTreeEventId(primary)}` : '/api/events';
+                requests.push(fetch(url, {
+                    method: primary ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }));
+                existing.slice(1).forEach(event => {
+                    requests.push(fetch(`/api/events/${getLunaTreeEventId(event)}`, { method: 'DELETE' }));
+                });
+            }
+
+            try {
+                const responses = await Promise.all(requests);
+                if (responses.some(response => !response.ok)) throw new Error('save failed');
+                await refreshEvents();
+                await loadLunaTreeEvents(year);
+                renderLunaTreePage();
+                if (document.getElementById('daySheet').classList.contains('open') && selectedDateStr) {
+                    openDaySheet(selectedDateStr);
+                }
+                alertDiv.style.color = '#137333';
+                alertDiv.innerText = 'LunaTreeを保存しました。';
+                setTimeout(() => { alertDiv.innerText = ''; alertDiv.style.color = ''; }, 3000);
+            } catch (error) {
+                console.error(error);
+                alertDiv.style.color = '';
+                alertDiv.innerText = 'LunaTreeを保存できませんでした。';
+            }
         }
 
         function handleSettingsSubmit(e) {
@@ -1683,6 +2144,7 @@
             const drawerEl = document.getElementById('drawer');
             const labelSectionEl = document.getElementById('labelSection');
             const settingsSectionEl = document.getElementById('settingsSection');
+            const lunaTreeSectionEl = document.getElementById('lunaTreeSection');
             const bottomSystemGestureGuardEl = document.getElementById('bottomSystemGestureGuard');
 
             // 各種別画面・ドロワー内での上下スライド・ホイール操作の伝播を抑止してカレンダー移動の誤作動を防ぐ
@@ -1698,6 +2160,10 @@
             settingsSectionEl.addEventListener('wheel', stopPropagationFunc, { passive: true });
             settingsSectionEl.addEventListener('touchstart', stopPropagationFunc, { passive: true });
             settingsSectionEl.addEventListener('touchend', stopPropagationFunc, { passive: true });
+
+            lunaTreeSectionEl.addEventListener('wheel', stopPropagationFunc, { passive: true });
+            lunaTreeSectionEl.addEventListener('touchstart', stopPropagationFunc, { passive: true });
+            lunaTreeSectionEl.addEventListener('touchend', stopPropagationFunc, { passive: true });
 
             ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'pointermove', 'pointerup', 'click'].forEach(eventName => {
                 bottomSystemGestureGuardEl.addEventListener(eventName, function(e) {
@@ -1775,6 +2241,12 @@
 
                 eventClassNames: function(arg) {
                     if (arg.event.extendedProps.is_holiday) return ['fc-event-holiday'];
+                    if (isLunaTreeEvent({
+                        title: arg.event.title,
+                        start: arg.event.startStr,
+                        end: arg.event.endStr,
+                        extendedProps: arg.event.extendedProps
+                    })) return ['fc-event-lunatree'];
                     const classes = [];
                     if (arg.event.allDay) classes.push('fc-event-forced-all-day');
                     return classes;
@@ -1951,12 +2423,15 @@
                     item.className = 'day-event-item';
                     
                     const isHoliday = ev.extendedProps?.is_holiday === 1;
+                    const isLunaTree = isLunaTreeEvent(ev);
                     const eventColor = isHoliday ? '#d93025' : (ev.color || (ev.extendedProps.is_shared ? '#8fa89b' : '#7a94a6'));
                     const isMine = ev.extendedProps.is_mine;
                     
                     let rightInfoHtml = "";
                     if (isHoliday) {
                         rightInfoHtml = `<span style="font-size:11px; color:#d93025; font-weight:bold;">祝日</span>`;
+                    } else if (isLunaTree) {
+                        rightInfoHtml = `<span style="font-size:11px; color:#9aa0a6;">LunaTree</span>`;
                     } else if (!isMine) {
                         rightInfoHtml = `<span style="font-size:11px; color:#9aa0a6;">相手の予定</span>`;
                     }
@@ -1964,6 +2439,9 @@
                     let timeSuffixInfo = `<span style="font-size:11px; color:#70757a; font-weight:normal; margin-left:8px;">終日</span>`;
                     if (isHoliday) {
                         timeSuffixInfo = ""; 
+                    } else if (isLunaTree) {
+                        const meta = parseLunaTreeMeta(ev);
+                        timeSuffixInfo = `<span style="font-size:11px; color:#70757a; font-weight:normal; margin-left:8px;">${meta?.periodLength || 1}日間</span>`;
                     } else if (!ev.allDay && ev.start.includes('T')) {
                         const sTime = ev.start.split('T')[1].substring(0, 5);
                         const eTime = ev.end.includes('T') ? ev.end.split('T')[1].substring(0, 5) : "";
@@ -1981,7 +2459,13 @@
                         ${rightInfoHtml}
                     `;
                     
-                    if (!isHoliday) {
+                    if (isLunaTree) {
+                        item.style.cursor = 'pointer';
+                        item.onclick = function() {
+                            closeDaySheet();
+                            openLunaTreeSPA();
+                        };
+                    } else if (!isHoliday) {
                         item.style.cursor = 'pointer';
                         item.onclick = function() { openEditModal(ev); };
                     }
