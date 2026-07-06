@@ -210,14 +210,17 @@
         .settings-container {
             justify-content: flex-start;
             align-items: center;
-            min-height: 100vh;
-            min-height: 100dvh;
+            height: 100%;
+            min-height: 0;
             background-color: #f4f6f9;
             margin: 0;
             padding: calc(12px + env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom));
             box-sizing: border-box;
             overflow-y: auto;
             overflow-x: hidden;
+        }
+        input[type="checkbox"], input[type="radio"] {
+            accent-color: #2f6f4e;
         }
         .spa-card {
             background: white;
@@ -367,7 +370,7 @@
         }
         .menu-item-label input { margin-right: 12px; }
         .menu-item-label:has(input:checked) {
-            background-color: #e8f0fe;
+            background-color: #e7f0ea;
             color: #2f6f4e;
             font-weight: 500;
         }
@@ -499,7 +502,7 @@
         /* FullCalendar 微調整 */
         .fc {
             --fc-border-color: #f1f3f4;
-            --fc-today-bg-color: #e8f0fe !important;
+            --fc-today-bg-color: #e7f0ea !important;
             font-size: 10px !important; 
             height: 100%;
             display: flex;
@@ -651,7 +654,7 @@
 
         /* 祝日のデザイン設定：他の終日予定の枠組と完全一致（アクセント線なし、濃い赤背景、白文字） */
         .fc-event-holiday {
-            background-color: #8f1f2d !important;
+            background-color: #d93025 !important;
             color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
@@ -664,7 +667,7 @@
             font-weight: 700 !important;
         }
         body.dark-mode .fc-event-holiday {
-            background-color: #6f1726 !important;
+            background-color: #b31412 !important;
             color: #ffffff !important;
             border: none !important;
             border-left: none !important;
@@ -1504,10 +1507,13 @@
                 document.getElementById('loginSection').style.display = 'flex';
             } else if (sectionId === 'settings') {
                 document.getElementById('settingsSection').style.display = 'flex';
+                document.getElementById('settingsSection').scrollTop = 0;
             } else if (sectionId === 'label') {
                 document.getElementById('labelSection').style.display = 'flex';
+                document.getElementById('labelSection').scrollTop = 0;
             } else if (sectionId === 'lunaTree') {
                 document.getElementById('lunaTreeSection').style.display = 'flex';
+                document.getElementById('lunaTreeSection').scrollTop = 0;
             }
         }
 
@@ -2089,8 +2095,8 @@
                     start: h.start,
                     end: h.end || h.start,
                     allDay: true,
-                    color: '#8f1f2d',
-                    backgroundColor: '#8f1f2d',
+                    color: '#d93025',
+                    backgroundColor: '#d93025',
                     extendedProps: { is_holiday: 1, is_mine: false, is_shared: true }
                 };
             });
@@ -2874,12 +2880,12 @@
                     
                     const isHoliday = ev.extendedProps?.is_holiday === 1;
                     const isLunaTree = isLunaTreeEvent(ev);
-                    const eventColor = isHoliday ? '#8f1f2d' : (ev.color || (ev.extendedProps.is_shared ? '#8fa89b' : '#7a94a6'));
+                    const eventColor = isHoliday ? '#d93025' : (ev.color || (ev.extendedProps.is_shared ? '#8fa89b' : '#7a94a6'));
                     const isMine = ev.extendedProps.is_mine;
                     
                     let rightInfoHtml = "";
                     if (isHoliday) {
-                        rightInfoHtml = `<span style="font-size:11px; color:#8f1f2d; font-weight:bold;">祝日</span>`;
+                        rightInfoHtml = `<span style="font-size:11px; color:#d93025; font-weight:bold;">祝日</span>`;
                     } else if (isLunaTree) {
                         rightInfoHtml = `<span style="font-size:11px; color:#9aa0a6;">LunaTree</span>`;
                     }
@@ -2901,7 +2907,7 @@
                         <div style="display:flex; align-items:center; overflow:hidden; flex:1; justify-content:space-between; margin-right:12px;">
                             <div style="display:flex; align-items:center; overflow:hidden;">
                                 <div class="day-event-dot" style="background-color: ${eventColor};"></div>
-                                <span style="font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; ${isHoliday ? 'color:#8f1f2d; font-weight:bold;' : ''}">${ev.title}</span>
+                                <span style="font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; ${isHoliday ? 'color:#d93025; font-weight:bold;' : ''}">${ev.title}</span>
                             </div>
                             ${timeSuffixInfo}
                         </div>
@@ -3164,7 +3170,7 @@
 
             // ダークモード状態に応じて祝日データの適用色を動的に変更する
             const isDarkMode = document.body.classList.contains('dark-mode');
-            const holidayColor = isDarkMode ? '#6f1726' : '#8f1f2d';
+            const holidayColor = isDarkMode ? '#b31412' : '#d93025';
             
             const updatedHolidays = cachedHolidays.map(h => {
                 return { 
