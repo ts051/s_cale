@@ -583,6 +583,15 @@
             margin-bottom: 1px !important;
             border: none !important;
         }
+        .fc-event:not(.fc-event-holiday) {
+            cursor: grab;
+        }
+        .fc-event:not(.fc-event-holiday):active {
+            cursor: grabbing;
+        }
+        .fc-event.fc-event-drag-disabled {
+            cursor: pointer;
+        }
         .fc .fc-daygrid-day-frame {
             height: 100% !important;
             max-height: 100% !important;
@@ -1285,6 +1294,7 @@
         let lastSelectedLabelId = null;
         let calendarDataInitialized = false;
         let currentDataRangeKey = '';
+        let suppressCalendarSwipeUntil = 0;
         let lunaTreeEvents = [];
         const LUNA_TREE_TITLE = '🚺';
         const LUNA_TREE_MEMO_PREFIX = 'LunaTree:';
@@ -2084,6 +2094,118 @@
             return `${yyyy}-${m}-${d}`;
         }
 
+        function formatDateForEventPayload(dateObj, allDay) {
+            const yyyy = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            if (allDay) return `${yyyy}-${m}-${d}`;
+
+            const hh = String(dateObj.getHours()).padStart(2, '0');
+            const mm = String(dateObj.getMinutes()).padStart(2, '0');
+            const ss = String(dateObj.getSeconds()).padStart(2, '0');
+            return `${yyyy}-${m}-${d}T${hh}:${mm}:${ss}`;
+        }
+
+        function getEventPayloadDate(fcEvent, key) {
+            const dateObj = fcEvent[key];
+            if (!dateObj) return '';
+            return formatDateForEventPayload(dateObj, fcEvent.allDay);
+        }
+
+        function buildPayloadFromCalendarEvent(fcEvent) {
+            const props = fcEvent.extendedProps || {};
+            const start = getEventPayloadDate(fcEvent, 'start');
+            let end = getEventPayloadDate(fcEvent, 'end');
+            if (!end) {
+                end = fcEvent.allDay ? addDaysToDateStr(start, 1) : start;
+            }
+
+            return {
+                title: fcEvent.title,
+                start,
+                end,
+                memo: props.memo || '',
+                allDay: fcEvent.allDay,
+                is_all_day: fcEvent.allDay,
+                label_id: props.label_id || null,
+                is_shared: !!props.is_shared,
+                recurrence: props.recurrence || ''
+            };
+        }
+
+        function isCalendarEventDragAllowed(fcEvent) {
+            const props = fcEvent.extendedProps || {};
+            if (props.is_holiday) return false;
+            if (props.recurrence) return false;
+            if (typeof isLunaTreeEvent === 'function' && isLunaTreeEvent({
+                title: fcEvent.title,
+                start: fcEvent.startStr,
+                end: fcEvent.endStr,
+                extendedProps: props
+            })) return false;
+            return props.is_shared === true || props.is_mine !== false;
+        }
+
+        function chooseDroppedEventAction() {
+            const input = window.prompt('この予定をどうしますか？\n「移動」または「コピー」と入力してください。\nキャンセルで中止します。', '移動');
+            if (input === null) return null;
+            const normalized = input.trim().toLowerCase();
+            if (normalized === '移動' || normalized === 'move' || normalized === 'm') return 'move';
+            if (normalized === 'コピー' || normalized === 'copy' || normalized === 'c') return 'copy';
+            alert('「移動」または「コピー」を入力してください。');
+            return null;
+        }
+
+        function refreshAfterEventDrop() {
+            return refreshEvents().then(() => {
+                if (document.getElementById('daySheet').classList.contains('open') && selectedDateStr) {
+                    openDaySheet(selectedDateStr);
+                }
+            });
+        }
+
+        function handleCalendarEventDrop(info) {
+            suppressCalendarSwipeUntil = Date.now() + 800;
+            if (!isCalendarEventDragAllowed(info.event)) {
+                info.revert();
+                return;
+            }
+
+            const action = chooseDroppedEventAction();
+            if (!action) {
+                info.revert();
+                return;
+            }
+
+            const payload = buildPayloadFromCalendarEvent(info.event);
+            const eventId = info.oldEvent.extendedProps?.original_id || info.oldEvent.id;
+            const isCopy = action === 'copy';
+            if (isCopy) info.revert();
+
+            const url = isCopy ? '/api/events' : `/api/events/${eventId}`;
+            const method = isCopy ? 'POST' : 'PUT';
+
+            fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (!res.ok) throw new Error(`サーバーエラー (Status: ${res.status})`);
+                return res.json();
+            })
+            .then(data => {
+                if (!data.success) throw new Error(data.error || '保存に失敗しました');
+                return refreshAfterEventDrop();
+            })
+            .catch(err => {
+                console.error(err);
+                if (!isCopy) info.revert();
+                alert('予定を保存できませんでした。');
+                refreshAfterEventDrop();
+            });
+        }
+
         function filterModalLabels(isEdit, currentLabelId) {
             const isSharedChecked = document.getElementById('isShared').checked;
             const select = document.getElementById('eventLabelSelect');
@@ -2305,7 +2427,9 @@
                 locale: 'ja',
                 firstDay: 1,
                 selectable: false,
-                editable: false,
+                editable: true,
+                eventDurationEditable: false,
+                eventLongPressDelay: 500,
                 displayEventTime: false,
                 fixedWeekCount: true,
                 expandRows: true,
@@ -2368,15 +2492,33 @@
                     openDaySheet(info.dateStr);
                 },
 
+                eventAllow: function(dropInfo, draggedEvent) {
+                    return isCalendarEventDragAllowed(draggedEvent);
+                },
+
+                eventDragStart: function() {
+                    suppressCalendarSwipeUntil = Date.now() + 1500;
+                },
+
+                eventDragStop: function() {
+                    suppressCalendarSwipeUntil = Date.now() + 800;
+                },
+
+                eventDrop: handleCalendarEventDrop,
+
                 eventClassNames: function(arg) {
                     if (arg.event.extendedProps.is_holiday) return ['fc-event-holiday'];
+                    const classes = [];
+                    if (!isCalendarEventDragAllowed(arg.event)) classes.push('fc-event-drag-disabled');
                     if (isLunaTreeEvent({
                         title: arg.event.title,
                         start: arg.event.startStr,
                         end: arg.event.endStr,
                         extendedProps: arg.event.extendedProps
-                    })) return ['fc-event-lunatree'];
-                    const classes = [];
+                    })) {
+                        classes.push('fc-event-lunatree');
+                        return classes;
+                    }
                     if (arg.event.allDay) classes.push('fc-event-forced-all-day');
                     return classes;
                 },
@@ -2466,6 +2608,7 @@
             let touchEndY = 0;
             calendarEl.addEventListener('touchstart', function(e) { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
             calendarEl.addEventListener('touchend', function(e) {
+                if (Date.now() < suppressCalendarSwipeUntil) return;
                 touchEndY = e.changedTouches[0].screenY;
                 if (!isAnimating) {
                     const diff = touchStartY - touchEndY;
