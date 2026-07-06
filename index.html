@@ -855,17 +855,19 @@
         }
         @media (max-width: 560px) {
             #lunaTreeSection.settings-container {
-                padding-left: 4px;
-                padding-right: 4px;
+                background-color: #ffffff;
+                padding-left: 0;
+                padding-right: 0;
                 padding-top: calc(20px + env(safe-area-inset-top));
             }
             .luna-tree-page {
-                max-width: calc(100vw - 8px);
+                max-width: 100%;
             }
             .luna-tree-card {
-                width: calc(100vw - 8px);
-                max-width: calc(100vw - 8px);
-                padding: 10px;
+                width: 100%;
+                max-width: 100%;
+                padding: 10px 14px;
+                box-shadow: none;
             }
             .luna-tree-card h2 {
                 margin-bottom: 10px;
@@ -903,9 +905,9 @@
                 margin-bottom: 14px;
             }
             .luna-tree-row {
-                grid-template-columns: 30px minmax(0, 86px) minmax(0, 86px) 40px 24px;
+                grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1fr) 42px 26px;
                 gap: 3px;
-                padding: 6px 4px;
+                padding: 6px 8px;
             }
             .luna-tree-input {
                 min-width: 0;
@@ -937,11 +939,10 @@
                 font-size: 13px;
             }
             .luna-tree-stats {
-                width: calc(100vw - 28px);
-                max-width: calc(100vw - 28px);
+                width: 100%;
+                max-width: 100%;
                 box-sizing: border-box;
-                grid-template-columns: repeat(3, 88px);
-                justify-content: start;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
                 gap: 6px;
                 padding: 8px 6px;
                 margin-bottom: 18px;
@@ -958,6 +959,7 @@
             }
             .luna-tree-field-label {
                 font-size: 10px;
+                padding-left: 4px;
             }
             .luna-tree-start,
             .luna-tree-end {
