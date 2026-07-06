@@ -698,7 +698,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             margin-bottom: 12px;
         }
         .luna-tree-input, .luna-tree-select {
@@ -713,7 +713,15 @@
             max-width: 100%;
             min-width: 0;
         }
-        .luna-tree-year { width: 104px; }
+        .luna-tree-year {
+            flex: 1 1 auto;
+            width: auto;
+        }
+        .luna-tree-toolbar .btn {
+            flex: 0 0 auto;
+            padding: 9px 10px;
+            white-space: nowrap;
+        }
         .luna-tree-stats {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -724,9 +732,10 @@
             padding: 10px;
         }
         .luna-tree-stat-value {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             color: #3c4043;
+            line-height: 1.2;
         }
         .luna-tree-stat-label, .luna-tree-muted {
             font-size: 12px;
@@ -734,41 +743,29 @@
         }
         .luna-tree-row {
             display: grid;
-            grid-template-columns: 40px minmax(0, 1fr) 34px;
-            grid-template-areas:
-                "month fields fields"
-                "month period clear";
-            gap: 10px;
+            grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr) 46px 30px;
+            gap: 6px;
             align-items: center;
             border: 1px solid #eef0f2;
             border-radius: 8px;
-            padding: 10px;
+            padding: 8px;
             margin-bottom: 8px;
             background: #fbfbfc;
             box-sizing: border-box;
             box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
         }
         .luna-tree-row-label {
-            grid-area: month;
             color: #5f6368;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             line-height: 1;
+            white-space: nowrap;
         }
         .luna-tree-field {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
             min-width: 0;
-        }
-        .luna-tree-field-grid {
-            grid-area: fields;
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-            width: 100%;
-            min-width: 0;
-            max-width: none;
         }
         .luna-tree-field-label {
             font-size: 11px;
@@ -776,27 +773,26 @@
             line-height: 1;
         }
         .luna-tree-period {
-            grid-area: period;
-            justify-self: start;
+            justify-self: stretch;
             display: inline-flex;
             align-items: center;
-            min-height: 28px;
-            padding: 4px 10px;
-            border-radius: 999px;
+            justify-content: center;
+            min-height: 34px;
+            padding: 4px;
+            border-radius: 8px;
             background: #f1f3f4;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #5f6368;
             white-space: nowrap;
         }
         .luna-tree-clear {
-            grid-area: clear;
             justify-self: end;
             align-self: center;
-            width: 34px;
+            width: 30px;
             height: 34px;
             border: 1px solid #dadce0;
-            border-radius: 999px;
+            border-radius: 8px;
             background: #ffffff;
             color: #5f6368;
             cursor: pointer;
@@ -806,32 +802,72 @@
             box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1);
         }
         @media (max-width: 560px) {
-            .luna-tree-stats {
-                grid-template-columns: 1fr;
+            #lunaTreeSection.settings-container {
+                padding-left: 4px;
+                padding-right: 4px;
+            }
+            .luna-tree-card {
+                padding: 10px;
+            }
+            .luna-tree-panel {
+                padding: 8px 6px;
             }
             .luna-tree-row {
-                grid-template-columns: 42px minmax(0, 1fr) 36px;
-                grid-template-areas:
-                    "month fields fields"
-                    "month period clear";
-                gap: 9px;
-                padding: 12px;
+                grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr) 36px 24px;
+                gap: 3px;
+                padding: 6px 4px;
             }
             .luna-tree-input {
                 min-width: 0;
                 width: 100%;
-                font-size: 13px;
-                padding: 8px 6px;
+                font-size: 11px;
+                padding: 7px 2px;
                 -webkit-appearance: none;
                 appearance: none;
             }
-            .luna-tree-row-label {
-                line-height: 1;
+            .luna-tree-start::-webkit-calendar-picker-indicator,
+            .luna-tree-end::-webkit-calendar-picker-indicator {
+                width: 14px;
+                height: 14px;
+                margin: 0;
+                padding: 0;
             }
-            .luna-tree-field-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 8px;
-                max-width: none;
+            .luna-tree-year {
+                min-width: 82px;
+            }
+            .luna-tree-toolbar {
+                gap: 6px;
+            }
+            .luna-tree-toolbar .btn {
+                padding: 9px 8px;
+                font-size: 13px;
+            }
+            .luna-tree-stats {
+                gap: 6px;
+                padding: 8px 6px;
+            }
+            .luna-tree-stat-value {
+                font-size: 15px;
+            }
+            .luna-tree-stat-label {
+                font-size: 10px;
+                line-height: 1.25;
+            }
+            .luna-tree-row-label {
+                font-size: 11px;
+            }
+            .luna-tree-field-label {
+                font-size: 10px;
+            }
+            .luna-tree-period {
+                min-height: 32px;
+                font-size: 10px;
+                padding: 3px 2px;
+            }
+            .luna-tree-clear {
+                width: 24px;
+                height: 32px;
+                font-size: 16px;
             }
         }
 
@@ -1161,8 +1197,17 @@
                 <h2>LunaTree</h2>
                 <div class="alert-text" id="lunaTreeAlert"></div>
 
+                <div class="luna-tree-panel">
+                    <div class="luna-tree-muted" style="margin-bottom: 10px;">カレンダー表示設定</div>
+                    <div class="drawer-row" style="gap: 16px; margin-bottom: 10px;">
+                        <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="lunaTreeScope" value="shared" checked onchange="handleLunaTreeScopeChange()" style="transform: scale(1.1); margin-right: 4px;"> 共有</label>
+                        <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="lunaTreeScope" value="private" onchange="handleLunaTreeScopeChange()" style="transform: scale(1.1); margin-right: 4px;"> 個人</label>
+                    </div>
+                    <label class="luna-tree-muted" for="lunaTreeLabelId">ラベル</label>
+                    <select id="lunaTreeLabelId" class="luna-tree-select" style="width: 100%; margin-top: 5px;"></select>
+                </div>
+
                 <div class="luna-tree-toolbar">
-                    <label class="luna-tree-muted" for="lunaTreeYear">入力する年</label>
                     <input type="number" id="lunaTreeYear" class="luna-tree-input luna-tree-year" min="1900" max="2100" step="1" onchange="handleLunaTreeYearChange()">
                     <button type="button" class="btn btn-secondary" onclick="shiftLunaTreeYear(-1)">前年</button>
                     <button type="button" class="btn btn-secondary" onclick="shiftLunaTreeYear(1)">翌年</button>
@@ -1171,26 +1216,16 @@
                 <div class="luna-tree-stats" id="lunaTreeStats">
                     <div>
                         <div class="luna-tree-stat-value" id="lunaTreeElapsed">-</div>
-                        <div class="luna-tree-stat-label">前回開始日から</div>
+                        <div class="luna-tree-stat-label">前回開始日からの経過日数</div>
                     </div>
                     <div>
                         <div class="luna-tree-stat-value" id="lunaTreeAverageCycle">-</div>
-                        <div class="luna-tree-stat-label">年間の平均周期</div>
+                        <div class="luna-tree-stat-label">年平均周期</div>
                     </div>
                     <div>
                         <div class="luna-tree-stat-value" id="lunaTreeAveragePeriod">-</div>
-                        <div class="luna-tree-stat-label">年間の平均生理期間</div>
+                        <div class="luna-tree-stat-label">年平均生理期間</div>
                     </div>
-                </div>
-
-                <div class="luna-tree-panel" style="margin-top: 14px;">
-                    <div class="luna-tree-muted" style="margin-bottom: 10px;">カレンダー表示設定</div>
-                    <div class="drawer-row" style="gap: 16px; margin-bottom: 10px;">
-                        <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="lunaTreeScope" value="shared" checked onchange="handleLunaTreeScopeChange()" style="transform: scale(1.1); margin-right: 4px;"> 共有</label>
-                        <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="lunaTreeScope" value="private" onchange="handleLunaTreeScopeChange()" style="transform: scale(1.1); margin-right: 4px;"> 個人</label>
-                    </div>
-                    <label class="luna-tree-muted" for="lunaTreeLabelId">ラベル</label>
-                    <select id="lunaTreeLabelId" class="luna-tree-select" style="width: 100%; margin-top: 5px;"></select>
                 </div>
 
                 <div class="luna-tree-panel">
@@ -1857,18 +1892,16 @@
                 const periodText = startDate && endDate ? `${getLunaTreePeriodLength(startDate, endDate)}日間` : (startDate ? '予定' : '-');
                 row.innerHTML = `
                     <div class="luna-tree-row-label">${index + 1}月</div>
-                    <button type="button" class="luna-tree-clear" title="クリア" aria-label="${index + 1}月をクリア" onclick="clearLunaTreeRow(this)">×</button>
-                    <div class="luna-tree-field-grid">
-                        <label class="luna-tree-field luna-tree-start-field">
-                            <span class="luna-tree-field-label">開始</span>
-                            <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onchange="updateLunaTreeRowPeriod(this)">
-                        </label>
-                        <label class="luna-tree-field luna-tree-end-field">
-                            <span class="luna-tree-field-label">終了</span>
-                            <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onchange="updateLunaTreeRowPeriod(this)">
-                        </label>
-                    </div>
+                    <label class="luna-tree-field luna-tree-start-field">
+                        <span class="luna-tree-field-label">開始日</span>
+                        <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onchange="updateLunaTreeRowPeriod(this)">
+                    </label>
+                    <label class="luna-tree-field luna-tree-end-field">
+                        <span class="luna-tree-field-label">終了日</span>
+                        <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onchange="updateLunaTreeRowPeriod(this)">
+                    </label>
                     <div class="luna-tree-period">${periodText}</div>
+                    <button type="button" class="luna-tree-clear" title="クリア" aria-label="${index + 1}月をクリア" onclick="clearLunaTreeRow(this)">×</button>
                 `;
                 container.appendChild(row);
             }
