@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'whitetree-shell-v21';
+const CACHE_VERSION = 'whitetree-shell-v22';
 const APP_SHELL = [
   '/',
   '/static/manifest.webmanifest',
