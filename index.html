@@ -131,6 +131,12 @@
             background-color: #1f1f1f;
             box-shadow: 0 12px 24px rgba(0,0,0,0.4);
         }
+        body.dark-mode .drag-action-title {
+            color: #e8eaed;
+        }
+        body.dark-mode .drag-action-summary {
+            color: #9aa0a6;
+        }
         body.dark-mode .modal input[type="text"] {
             border-bottom: 2px solid #3c4043;
             color: #e8eaed;
@@ -583,15 +589,6 @@
             margin-bottom: 1px !important;
             border: none !important;
         }
-        .fc-event:not(.fc-event-holiday) {
-            cursor: grab;
-        }
-        .fc-event:not(.fc-event-holiday):active {
-            cursor: grabbing;
-        }
-        .fc-event.fc-event-drag-disabled {
-            cursor: pointer;
-        }
         .fc .fc-daygrid-day-frame {
             height: 100% !important;
             max-height: 100% !important;
@@ -885,6 +882,29 @@
             user-select: none;
             -webkit-user-select: none;
         }
+        .day-event-item.day-event-draggable {
+            cursor: grab;
+            touch-action: none;
+        }
+        .day-event-item.day-event-draggable:active {
+            cursor: grabbing;
+        }
+        .day-event-drag-ghost {
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 2000;
+            pointer-events: none;
+            opacity: 0.92;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.24);
+            transform: translate3d(-9999px, -9999px, 0);
+            max-width: min(360px, calc(100vw - 24px));
+        }
+        .fc .fc-daygrid-day.day-card-drop-target .fc-daygrid-day-frame {
+            outline: 2px solid #1a73e8;
+            outline-offset: -2px;
+            background-color: rgba(26, 115, 232, 0.12);
+        }
         .day-event-dot {
             width: 10px;
             height: 10px;
@@ -912,6 +932,19 @@
             z-index: 10;
         }
         .fab-add:active { background-color: #1557b0; }
+
+        .drag-action-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #3c4043;
+        }
+        .drag-action-summary {
+            font-size: 13px;
+            color: #5f6368;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
 
         /* 予定登録ポップアップ */
         .modal { 
@@ -1278,6 +1311,16 @@
                 <button class="btn btn-primary" onclick="saveEvent()">保存</button>
             </div>
         </div>
+
+        <div class="modal" id="eventDragActionModal">
+            <div class="drag-action-title">予定をどうしますか？</div>
+            <div class="drag-action-summary" id="eventDragActionSummary"></div>
+            <div class="modal-btns">
+                <button class="btn btn-secondary" onclick="closeEventDragActionModal(true)">キャンセル</button>
+                <button class="btn btn-secondary" id="eventDragCopyButton" onclick="confirmDayCardDropAction('copy')">コピー</button>
+                <button class="btn btn-primary" id="eventDragMoveButton" onclick="confirmDayCardDropAction('move')">移動</button>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1295,6 +1338,9 @@
         let calendarDataInitialized = false;
         let currentDataRangeKey = '';
         let suppressCalendarSwipeUntil = 0;
+        let dayCardDragState = null;
+        let pendingDayCardDrop = null;
+        let suppressDayCardClickUntil = 0;
         let lunaTreeEvents = [];
         const LUNA_TREE_TITLE = '🚺';
         const LUNA_TREE_MEMO_PREFIX = 'LunaTree:';
@@ -2106,84 +2152,208 @@
             return `${yyyy}-${m}-${d}T${hh}:${mm}:${ss}`;
         }
 
-        function getEventPayloadDate(fcEvent, key) {
-            const dateObj = fcEvent[key];
-            if (!dateObj) return '';
-            return formatDateForEventPayload(dateObj, fcEvent.allDay);
+        function parseEventDateForDrag(value, allDay) {
+            if (!value) return null;
+            const datePart = value.split('T')[0];
+            const parts = datePart.split('-').map(part => parseInt(part, 10));
+            if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+            if (allDay || !value.includes('T')) return new Date(parts[0], parts[1] - 1, parts[2]);
+
+            const timeParts = value.split('T')[1].split(':').map(part => parseInt(part, 10));
+            return new Date(parts[0], parts[1] - 1, parts[2], timeParts[0] || 0, timeParts[1] || 0, timeParts[2] || 0);
         }
 
-        function buildPayloadFromCalendarEvent(fcEvent) {
-            const props = fcEvent.extendedProps || {};
-            const start = getEventPayloadDate(fcEvent, 'start');
-            let end = getEventPayloadDate(fcEvent, 'end');
-            if (!end) {
-                end = fcEvent.allDay ? addDaysToDateStr(start, 1) : start;
+        function isDayCardEventDragAllowed(eventData) {
+            const props = eventData.extendedProps || {};
+            if (props.is_holiday) return false;
+            if (props.recurrence) return false;
+            if (typeof isLunaTreeEvent === 'function' && isLunaTreeEvent(eventData)) return false;
+            return props.is_shared === true || props.is_mine !== false;
+        }
+
+        function buildPayloadForDayCardDrop(eventData, targetDate) {
+            const props = eventData.extendedProps || {};
+            const allDay = !!eventData.allDay;
+            const originalStart = parseEventDateForDrag(eventData.start, allDay);
+            let originalEnd = parseEventDateForDrag(eventData.end, allDay);
+            if (!originalStart) throw new Error('Invalid start date');
+            if (!originalEnd) {
+                originalEnd = new Date(originalStart.getTime() + (allDay ? 86400000 : 0));
             }
 
+            const durationMs = Math.max(allDay ? 86400000 : 0, originalEnd.getTime() - originalStart.getTime());
+            const targetStartBase = parseEventDateForDrag(
+                allDay ? targetDate : `${targetDate}T${String(originalStart.getHours()).padStart(2, '0')}:${String(originalStart.getMinutes()).padStart(2, '0')}:${String(originalStart.getSeconds()).padStart(2, '0')}`,
+                allDay
+            );
+            const targetEnd = new Date(targetStartBase.getTime() + durationMs);
+
             return {
-                title: fcEvent.title,
-                start,
-                end,
+                title: eventData.title,
+                start: formatDateForEventPayload(targetStartBase, allDay),
+                end: formatDateForEventPayload(targetEnd, allDay),
                 memo: props.memo || '',
-                allDay: fcEvent.allDay,
-                is_all_day: fcEvent.allDay,
+                allDay,
+                is_all_day: allDay,
                 label_id: props.label_id || null,
                 is_shared: !!props.is_shared,
                 recurrence: props.recurrence || ''
             };
         }
 
-        function isCalendarEventDragAllowed(fcEvent) {
-            const props = fcEvent.extendedProps || {};
-            if (props.is_holiday) return false;
-            if (props.recurrence) return false;
-            if (typeof isLunaTreeEvent === 'function' && isLunaTreeEvent({
-                title: fcEvent.title,
-                start: fcEvent.startStr,
-                end: fcEvent.endStr,
-                extendedProps: props
-            })) return false;
-            return props.is_shared === true || props.is_mine !== false;
+        function setDayCardDropTarget(dateStr) {
+            document.querySelectorAll('.day-card-drop-target').forEach(el => el.classList.remove('day-card-drop-target'));
+            if (!dateStr) return;
+            const target = document.querySelector(`.fc-daygrid-day[data-date="${dateStr}"]`);
+            if (target) target.classList.add('day-card-drop-target');
         }
 
-        function chooseDroppedEventAction() {
-            const input = window.prompt('この予定をどうしますか？\n「移動」または「コピー」と入力してください。\nキャンセルで中止します。', '移動');
-            if (input === null) return null;
-            const normalized = input.trim().toLowerCase();
-            if (normalized === '移動' || normalized === 'move' || normalized === 'm') return 'move';
-            if (normalized === 'コピー' || normalized === 'copy' || normalized === 'c') return 'copy';
-            alert('「移動」または「コピー」を入力してください。');
-            return null;
+        function getCalendarDateFromPoint(x, y) {
+            const element = document.elementFromPoint(x, y);
+            const dayCell = element?.closest?.('.fc-daygrid-day[data-date]');
+            return dayCell ? dayCell.getAttribute('data-date') : '';
         }
 
-        function refreshAfterEventDrop() {
-            return refreshEvents().then(() => {
-                if (document.getElementById('daySheet').classList.contains('open') && selectedDateStr) {
-                    openDaySheet(selectedDateStr);
-                }
+        function updateDayCardDragGhost(state, x, y) {
+            if (state.ghost) {
+                state.ghost.style.transform = `translate3d(${x + 12}px, ${y + 12}px, 0)`;
+            }
+            state.targetDate = getCalendarDateFromPoint(x, y);
+            setDayCardDropTarget(state.targetDate);
+        }
+
+        function hideDaySheetForDrag() {
+            const sheet = document.getElementById('daySheet');
+            sheet.classList.remove('open');
+            sheet.style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        function finishDayCardDragState() {
+            if (!dayCardDragState) return null;
+            const state = dayCardDragState;
+            if (state.timer) clearTimeout(state.timer);
+            document.removeEventListener('pointermove', state.onPointerMove);
+            document.removeEventListener('pointerup', state.onPointerUp);
+            document.removeEventListener('pointercancel', state.onPointerCancel);
+            if (state.ghost) state.ghost.remove();
+            setDayCardDropTarget('');
+            dayCardDragState = null;
+            return state;
+        }
+
+        function startDayCardDrag(state, pointerEvent) {
+            state.active = true;
+            suppressCalendarSwipeUntil = Date.now() + 1500;
+            suppressDayCardClickUntil = Date.now() + 1000;
+            state.ghost = state.item.cloneNode(true);
+            state.ghost.classList.add('day-event-drag-ghost');
+            state.ghost.style.width = `${Math.min(state.item.offsetWidth, window.innerWidth - 24)}px`;
+            document.body.appendChild(state.ghost);
+            hideDaySheetForDrag();
+            updateDayCardDragGhost(state, pointerEvent.clientX, pointerEvent.clientY);
+        }
+
+        function attachDayCardDragHandlers(item, eventData) {
+            item.classList.add('day-event-draggable');
+            item.addEventListener('contextmenu', event => event.preventDefault());
+            item.addEventListener('pointerdown', function(pointerEvent) {
+                if (pointerEvent.button !== undefined && pointerEvent.button !== 0) return;
+                const state = {
+                    item,
+                    eventData,
+                    startX: pointerEvent.clientX,
+                    startY: pointerEvent.clientY,
+                    active: false,
+                    targetDate: '',
+                    ghost: null,
+                    timer: null
+                };
+
+                state.onPointerMove = function(moveEvent) {
+                    const distance = Math.hypot(moveEvent.clientX - state.startX, moveEvent.clientY - state.startY);
+                    if (!state.active && distance > 10) {
+                        finishDayCardDragState();
+                        return;
+                    }
+                    if (state.active) {
+                        moveEvent.preventDefault();
+                        suppressCalendarSwipeUntil = Date.now() + 800;
+                        updateDayCardDragGhost(state, moveEvent.clientX, moveEvent.clientY);
+                    }
+                };
+                state.onPointerUp = function(upEvent) {
+                    const finished = finishDayCardDragState();
+                    if (!finished?.active) return;
+                    upEvent.preventDefault();
+                    suppressDayCardClickUntil = Date.now() + 800;
+                    const targetDate = finished.targetDate || getCalendarDateFromPoint(upEvent.clientX, upEvent.clientY);
+                    if (targetDate) {
+                        openEventDragActionModal(finished.eventData, targetDate);
+                    } else if (selectedDateStr) {
+                        openDaySheet(selectedDateStr);
+                    }
+                };
+                state.onPointerCancel = function() {
+                    const finished = finishDayCardDragState();
+                    if (finished?.active && selectedDateStr) openDaySheet(selectedDateStr);
+                };
+
+                dayCardDragState = state;
+                document.addEventListener('pointermove', state.onPointerMove, { passive: false });
+                document.addEventListener('pointerup', state.onPointerUp, { passive: false });
+                document.addEventListener('pointercancel', state.onPointerCancel, { passive: false });
+                state.timer = setTimeout(() => startDayCardDrag(state, pointerEvent), 500);
             });
         }
 
-        function handleCalendarEventDrop(info) {
-            suppressCalendarSwipeUntil = Date.now() + 800;
-            if (!isCalendarEventDragAllowed(info.event)) {
-                info.revert();
+        function openEventDragActionModal(eventData, targetDate) {
+            pendingDayCardDrop = { eventData, targetDate };
+            const summary = document.getElementById('eventDragActionSummary');
+            summary.textContent = `${eventData.title} → ${targetDate}`;
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('eventDragActionModal').style.display = 'block';
+            setEventDragActionBusy(false);
+        }
+
+        function setEventDragActionBusy(isBusy) {
+            ['eventDragCopyButton', 'eventDragMoveButton'].forEach(id => {
+                const button = document.getElementById(id);
+                if (button) button.disabled = isBusy;
+            });
+        }
+
+        function closeEventDragActionModal(reopenSheet) {
+            document.getElementById('eventDragActionModal').style.display = 'none';
+            pendingDayCardDrop = null;
+            setEventDragActionBusy(false);
+            if (reopenSheet && selectedDateStr) {
+                openDaySheet(selectedDateStr);
+                return;
+            }
+            if (document.getElementById('eventModal').style.display !== 'block' && !document.getElementById('daySheet').classList.contains('open')) {
+                document.getElementById('overlay').style.display = 'none';
+            }
+        }
+
+        function confirmDayCardDropAction(action) {
+            if (!pendingDayCardDrop) return;
+            const { eventData, targetDate } = pendingDayCardDrop;
+            let payload;
+            try {
+                payload = buildPayloadForDayCardDrop(eventData, targetDate);
+            } catch (error) {
+                console.error(error);
+                alert('予定の日付を変更できませんでした。');
+                closeEventDragActionModal(true);
                 return;
             }
 
-            const action = chooseDroppedEventAction();
-            if (!action) {
-                info.revert();
-                return;
-            }
-
-            const payload = buildPayloadFromCalendarEvent(info.event);
-            const eventId = info.oldEvent.extendedProps?.original_id || info.oldEvent.id;
+            const eventId = eventData.extendedProps?.original_id || eventData.id;
             const isCopy = action === 'copy';
-            if (isCopy) info.revert();
-
             const url = isCopy ? '/api/events' : `/api/events/${eventId}`;
             const method = isCopy ? 'POST' : 'PUT';
+            setEventDragActionBusy(true);
 
             fetch(url, {
                 method,
@@ -2196,13 +2366,14 @@
             })
             .then(data => {
                 if (!data.success) throw new Error(data.error || '保存に失敗しました');
-                return refreshAfterEventDrop();
+                closeEventDragActionModal(false);
+                return refreshEvents();
             })
+            .then(() => openDaySheet(targetDate))
             .catch(err => {
                 console.error(err);
-                if (!isCopy) info.revert();
                 alert('予定を保存できませんでした。');
-                refreshAfterEventDrop();
+                setEventDragActionBusy(false);
             });
         }
 
@@ -2427,9 +2598,7 @@
                 locale: 'ja',
                 firstDay: 1,
                 selectable: false,
-                editable: true,
-                eventDurationEditable: false,
-                eventLongPressDelay: 500,
+                editable: false,
                 displayEventTime: false,
                 fixedWeekCount: true,
                 expandRows: true,
@@ -2492,24 +2661,9 @@
                     openDaySheet(info.dateStr);
                 },
 
-                eventAllow: function(dropInfo, draggedEvent) {
-                    return isCalendarEventDragAllowed(draggedEvent);
-                },
-
-                eventDragStart: function() {
-                    suppressCalendarSwipeUntil = Date.now() + 1500;
-                },
-
-                eventDragStop: function() {
-                    suppressCalendarSwipeUntil = Date.now() + 800;
-                },
-
-                eventDrop: handleCalendarEventDrop,
-
                 eventClassNames: function(arg) {
                     if (arg.event.extendedProps.is_holiday) return ['fc-event-holiday'];
                     const classes = [];
-                    if (!isCalendarEventDragAllowed(arg.event)) classes.push('fc-event-drag-disabled');
                     if (isLunaTreeEvent({
                         title: arg.event.title,
                         start: arg.event.startStr,
@@ -2732,15 +2886,21 @@
                         ${rightInfoHtml}
                     `;
                     
+                    if (!isHoliday && !isLunaTree && isDayCardEventDragAllowed(ev)) {
+                        attachDayCardDragHandlers(item, ev);
+                    }
+
                     if (isLunaTree) {
-                        item.style.cursor = 'pointer';
                         item.onclick = function() {
+                            if (Date.now() < suppressDayCardClickUntil) return;
                             closeDaySheet();
                             openLunaTreeSPA();
                         };
                     } else if (!isHoliday) {
-                        item.style.cursor = 'pointer';
-                        item.onclick = function() { openEditModal(ev); };
+                        item.onclick = function() {
+                            if (Date.now() < suppressDayCardClickUntil) return;
+                            openEditModal(ev);
+                        };
                     }
                     listContainer.appendChild(item);
                 });
@@ -2832,7 +2992,7 @@
                 document.getElementById('overlay').style.display = 'none';
             }
         }
-        function closeAllModals() { closeDaySheet(); closeRegisterModal(); }
+        function closeAllModals() { closeDaySheet(); closeRegisterModal(); closeEventDragActionModal(false); }
 
         function saveEvent() {
             const titleVal = document.getElementById('eventTitle').value.trim();
