@@ -694,6 +694,49 @@
             box-sizing: border-box;
             box-shadow: 0 1px 3px rgba(60, 64, 67, 0.08);
         }
+        .luna-tree-display-panel {
+            margin-top: 0;
+        }
+        .luna-tree-display-title {
+            margin-bottom: 10px;
+        }
+        .luna-tree-display-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+        .luna-tree-scope-options {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex: 0 0 auto;
+        }
+        .luna-tree-radio-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .luna-tree-radio-label input {
+            margin: 0;
+            transform: scale(1.1);
+        }
+        .luna-tree-label-control {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: center;
+            gap: 6px;
+            flex: 1 1 0;
+            max-width: 210px;
+            min-width: 0;
+        }
+        #lunaTreeAlert:empty {
+            min-height: 0;
+            margin-bottom: 6px;
+        }
         .luna-tree-toolbar {
             display: flex;
             align-items: center;
@@ -714,8 +757,9 @@
             min-width: 0;
         }
         .luna-tree-year {
-            flex: 1 1 auto;
-            width: auto;
+            flex: 0 1 210px;
+            width: 210px;
+            padding-left: 12px;
         }
         .luna-tree-toolbar .btn {
             flex: 0 0 auto;
@@ -730,6 +774,11 @@
             border-radius: 8px;
             background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
             padding: 10px;
+            margin-bottom: 18px;
+        }
+        .luna-tree-stats > div {
+            min-width: 0;
+            text-align: center;
         }
         .luna-tree-stat-value {
             font-size: 17px;
@@ -740,6 +789,9 @@
         .luna-tree-stat-label, .luna-tree-muted {
             font-size: 12px;
             color: #70757a;
+        }
+        .luna-tree-stat-label {
+            overflow-wrap: anywhere;
         }
         .luna-tree-row {
             display: grid;
@@ -805,23 +857,62 @@
             #lunaTreeSection.settings-container {
                 padding-left: 4px;
                 padding-right: 4px;
+                padding-top: calc(20px + env(safe-area-inset-top));
+            }
+            .luna-tree-page {
+                max-width: calc(100vw - 8px);
             }
             .luna-tree-card {
+                width: calc(100vw - 8px);
+                max-width: calc(100vw - 8px);
                 padding: 10px;
+            }
+            .luna-tree-card h2 {
+                margin-bottom: 10px;
             }
             .luna-tree-panel {
                 padding: 8px 6px;
             }
+            .luna-tree-display-panel {
+                margin-bottom: 14px;
+            }
+            .luna-tree-display-title {
+                margin-bottom: 8px;
+            }
+            .luna-tree-display-row {
+                gap: 7px;
+            }
+            .luna-tree-scope-options {
+                gap: 8px;
+            }
+            .luna-tree-radio-label {
+                font-size: 13px;
+            }
+            .luna-tree-label-control {
+                grid-template-columns: auto minmax(0, 1fr);
+                gap: 4px;
+                max-width: 170px;
+            }
+            .luna-tree-label-control .luna-tree-select {
+                height: 34px;
+                padding: 7px 8px;
+                font-size: 13px;
+            }
+            .luna-tree-toolbar {
+                gap: 6px;
+                margin-bottom: 14px;
+            }
             .luna-tree-row {
-                grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr) 36px 24px;
+                grid-template-columns: 30px minmax(0, 86px) minmax(0, 86px) 40px 24px;
                 gap: 3px;
                 padding: 6px 4px;
             }
             .luna-tree-input {
                 min-width: 0;
                 width: 100%;
-                font-size: 11px;
-                padding: 7px 2px;
+                min-height: 32px;
+                font-size: 12px;
+                padding: 7px 4px;
                 -webkit-appearance: none;
                 appearance: none;
             }
@@ -833,18 +924,27 @@
                 padding: 0;
             }
             .luna-tree-year {
-                min-width: 82px;
-            }
-            .luna-tree-toolbar {
-                gap: 6px;
+                flex: 0 1 170px;
+                width: 170px;
+                min-width: 0;
+                height: 34px;
+                padding-left: 10px;
+                font-size: 13px;
             }
             .luna-tree-toolbar .btn {
-                padding: 9px 8px;
+                height: 34px;
+                padding: 7px 8px;
                 font-size: 13px;
             }
             .luna-tree-stats {
+                width: calc(100vw - 28px);
+                max-width: calc(100vw - 28px);
+                box-sizing: border-box;
+                grid-template-columns: repeat(3, 88px);
+                justify-content: start;
                 gap: 6px;
                 padding: 8px 6px;
+                margin-bottom: 18px;
             }
             .luna-tree-stat-value {
                 font-size: 15px;
@@ -854,14 +954,20 @@
                 line-height: 1.25;
             }
             .luna-tree-row-label {
-                font-size: 11px;
+                font-size: 13px;
             }
             .luna-tree-field-label {
                 font-size: 10px;
             }
+            .luna-tree-start,
+            .luna-tree-end {
+                font-size: 11px;
+                padding-left: 3px;
+                padding-right: 2px;
+            }
             .luna-tree-period {
                 min-height: 32px;
-                font-size: 10px;
+                font-size: 12px;
                 padding: 3px 2px;
             }
             .luna-tree-clear {
@@ -1197,14 +1303,18 @@
                 <h2>LunaTree</h2>
                 <div class="alert-text" id="lunaTreeAlert"></div>
 
-                <div class="luna-tree-panel">
-                    <div class="luna-tree-muted" style="margin-bottom: 10px;">カレンダー表示設定</div>
-                    <div class="drawer-row" style="gap: 16px; margin-bottom: 10px;">
-                        <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="lunaTreeScope" value="shared" checked onchange="handleLunaTreeScopeChange()" style="transform: scale(1.1); margin-right: 4px;"> 共有</label>
-                        <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="lunaTreeScope" value="private" onchange="handleLunaTreeScopeChange()" style="transform: scale(1.1); margin-right: 4px;"> 個人</label>
+                <div class="luna-tree-panel luna-tree-display-panel">
+                    <div class="luna-tree-muted luna-tree-display-title">カレンダー表示設定</div>
+                    <div class="luna-tree-display-row">
+                        <div class="luna-tree-scope-options">
+                            <label class="luna-tree-radio-label"><input type="radio" name="lunaTreeScope" value="shared" checked onchange="handleLunaTreeScopeChange()"> 共有</label>
+                            <label class="luna-tree-radio-label"><input type="radio" name="lunaTreeScope" value="private" onchange="handleLunaTreeScopeChange()"> 個人</label>
+                        </div>
+                        <label class="luna-tree-label-control" for="lunaTreeLabelId">
+                            <span class="luna-tree-muted">ラベル</span>
+                            <select id="lunaTreeLabelId" class="luna-tree-select"></select>
+                        </label>
                     </div>
-                    <label class="luna-tree-muted" for="lunaTreeLabelId">ラベル</label>
-                    <select id="lunaTreeLabelId" class="luna-tree-select" style="width: 100%; margin-top: 5px;"></select>
                 </div>
 
                 <div class="luna-tree-toolbar">
