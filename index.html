@@ -55,8 +55,8 @@
             color: #e8eaed;
         }
         body.dark-mode .menu-item-label:has(input:checked) {
-            background-color: #38444d;
-            color: #8ab4f8;
+            background-color: #263b2f;
+            color: #9cc9aa;
         }
         body.dark-mode .select-styled, body.dark-mode .drawer-input, body.dark-mode .label-mgmt-item input[type="text"] {
             background-color: #2d2d2d;
@@ -86,7 +86,7 @@
             color: #e8eaed;
         }
         body.dark-mode .fc .fc-daygrid-day.fc-day-sat { background-color: #101f30; }
-        body.dark-mode .fc .fc-daygrid-day.fc-day-sun { background-color: #2d1919; }
+        body.dark-mode .fc .fc-daygrid-day.fc-day-sun { background-color: #2b1720; }
         body.dark-mode .fc .fc-toolbar .fc-menuButton-button { color: #e8eaed !important; }
         body.dark-mode .auth-container, body.dark-mode .settings-container {
             background-color: #121212;
@@ -208,18 +208,20 @@
             box-sizing: border-box;
         }
         .settings-container {
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             min-height: 100vh;
             min-height: 100dvh;
             background-color: #f4f6f9;
             margin: 0;
-            padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
+            padding: calc(12px + env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom));
             box-sizing: border-box;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
         .spa-card {
             background: white;
-            padding: 30px;
+            padding: 22px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             width: 100%;
@@ -227,20 +229,33 @@
         }
         .spa-card-wide {
             background: white;
-            padding: 30px;
+            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
         }
-        .spa-card h2, .spa-card-wide h2 { margin-top: 0; text-align: center; color: #333; }
+        .settings-page-card {
+            margin: 8px 0;
+            box-sizing: border-box;
+        }
+        .luna-tree-card {
+            max-width: 560px;
+        }
+        .spa-card h2, .spa-card-wide h2 {
+            margin-top: 0;
+            margin-bottom: 18px;
+            text-align: center;
+            color: #245b3a;
+            font-size: 20px;
+        }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #666; font-weight: bold; }
         .form-group input[type="text"], .form-group input[type="password"] {
             width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px;
         }
-        .btn-block { width: 100%; padding: 10px; background-color: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: 500; }
-        .btn-block:hover { background-color: #1557b0; }
+        .btn-block { width: 100%; padding: 10px; background-color: #2f6f4e; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: 500; }
+        .btn-block:hover { background-color: #245b3a; }
         
         .settings-btns { display: flex; gap: 10px; margin-top: 20px; }
         .btn-cancel { background-color: #6c757d; text-align: center; text-decoration: none; color: white; padding: 10px; border-radius: 4px; flex: 1; font-size: 16px; border: none; cursor: pointer; }
@@ -248,7 +263,7 @@
         .btn-save { flex: 1; padding: 10px; }
         
         .help-text { font-size: 12px; color: #6c757d; margin-top: 4px; font-weight: normal; }
-        .alert-text { color: red; font-size: 14px; text-align: center; margin-bottom: 10px; min-height: 18px; }
+        .alert-text { color: #8f1f2d; font-size: 14px; text-align: center; margin-bottom: 10px; min-height: 18px; }
 
         /* 最上部アプリバー（成功時フラッシュメッセージとセーフエリア確保用） */
         .app-bar {
@@ -353,7 +368,7 @@
         .menu-item-label input { margin-right: 12px; }
         .menu-item-label:has(input:checked) {
             background-color: #e8f0fe;
-            color: #1a73e8;
+            color: #2f6f4e;
             font-weight: 500;
         }
 
@@ -387,8 +402,8 @@
             box-sizing: border-box;
         }
         .btn-sidebar:hover, .btn-sidebar:active { background-color: #f8f9fa; }
-        .btn-logout { color: #d93025; }
-        .btn-logout:active { background-color: #fce8e6; }
+        .btn-logout { color: #8f1f2d; }
+        .btn-logout:active { background-color: #f8e7eb; }
 
         .drawer-input {
             padding: 6px 8px;
@@ -551,7 +566,7 @@
         .fc .fc-today-button {
             background-color: transparent !important;
             border: none !important;
-            color: #1a73e8 !important;
+            color: #2f6f4e !important;
             padding: 4px 8px !important;
             box-shadow: none !important;
             font-size: 14px !important;
@@ -559,12 +574,12 @@
         }
 
         /* 曜日・日付の色付け設定（土曜日を青、日曜日を赤） */
-        .fc .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion { color: #1a73e8 !important; }
-        .fc .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion { color: #d93025 !important; }
+        .fc .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion { color: #2f6f4e !important; }
+        .fc .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion { color: #8f1f2d !important; }
         .fc .fc-daygrid-day.fc-day-sat { background-color: #f1f7fe; }
         .fc .fc-daygrid-day.fc-day-sun { background-color: #fdf2f2; }
-        .fc .fc-daygrid-day.fc-day-sat .fc-daygrid-day-number { color: #1a73e8 !important; }
-        .fc .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number { color: #d93025 !important; }
+        .fc .fc-daygrid-day.fc-day-sat .fc-daygrid-day-number { color: #2f6f4e !important; }
+        .fc .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number { color: #8f1f2d !important; }
 
         .fc .fc-col-header-cell-cushion { font-size: 10px; color: #70757a; padding: 4px 0 !important; text-decoration: none !important; }
         .fc .fc-daygrid-day-number { font-size: 10px; color: #3c4043; padding: 2px 4px !important; text-decoration: none !important; }
@@ -636,7 +651,7 @@
 
         /* 祝日のデザイン設定：他の終日予定の枠組と完全一致（アクセント線なし、濃い赤背景、白文字） */
         .fc-event-holiday {
-            background-color: #d93025 !important;
+            background-color: #8f1f2d !important;
             color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
@@ -649,7 +664,7 @@
             font-weight: 700 !important;
         }
         body.dark-mode .fc-event-holiday {
-            background-color: #b31412 !important;
+            background-color: #6f1726 !important;
             color: #ffffff !important;
             border: none !important;
             border-left: none !important;
@@ -662,7 +677,7 @@
 
         .luna-tree-page {
             width: 100%;
-            max-width: 760px;
+            max-width: 560px;
             margin: 0 auto;
             box-sizing: border-box;
         }
@@ -670,15 +685,15 @@
             border: 1px solid #dadce0;
             border-radius: 8px;
             background: #ffffff;
-            padding: 16px;
-            margin-bottom: 14px;
+            padding: 12px;
+            margin-bottom: 12px;
             box-sizing: border-box;
             box-shadow: 0 1px 3px rgba(60, 64, 67, 0.08);
         }
         .luna-tree-toolbar {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
             margin-bottom: 12px;
         }
@@ -715,7 +730,7 @@
         }
         .luna-tree-row {
             display: grid;
-            grid-template-columns: 44px minmax(0, 360px) 36px;
+            grid-template-columns: 40px minmax(0, 1fr) 34px;
             grid-template-areas:
                 "month fields fields"
                 "month period clear";
@@ -723,8 +738,8 @@
             align-items: center;
             border: 1px solid #eef0f2;
             border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
             background: #fbfbfc;
             box-sizing: border-box;
             box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
@@ -749,7 +764,7 @@
             gap: 10px;
             width: 100%;
             min-width: 0;
-            max-width: 360px;
+            max-width: none;
         }
         .luna-tree-field-label {
             font-size: 11px;
@@ -774,8 +789,8 @@
             grid-area: clear;
             justify-self: end;
             align-self: center;
-            width: 36px;
-            height: 36px;
+            width: 34px;
+            height: 34px;
             border: 1px solid #dadce0;
             border-radius: 999px;
             background: #ffffff;
@@ -901,9 +916,9 @@
             max-width: min(360px, calc(100vw - 24px));
         }
         .fc .fc-daygrid-day.day-card-drop-target .fc-daygrid-day-frame {
-            outline: 2px solid #1a73e8;
+            outline: 2px solid #2f6f4e;
             outline-offset: -2px;
-            background-color: rgba(26, 115, 232, 0.12);
+            background-color: rgba(47, 111, 78, 0.12);
         }
         .day-event-dot {
             width: 10px;
@@ -919,7 +934,7 @@
             right: 20px;
             width: 48px;
             height: 48px;
-            background-color: #1a73e8;
+            background-color: #2f6f4e;
             color: white;
             border-radius: 50%;
             display: flex;
@@ -931,7 +946,7 @@
             cursor: pointer;
             z-index: 10;
         }
-        .fab-add:active { background-color: #1557b0; }
+        .fab-add:active { background-color: #245b3a; }
 
         .drag-action-title {
             font-size: 16px;
@@ -979,7 +994,7 @@
             color: #3c4043;
             box-sizing: border-box;
         }
-        .modal input[type="text"]:focus { border-bottom-color: #1a73e8; }
+        .modal input[type="text"]:focus { border-bottom-color: #2f6f4e; }
         
         .modal-field {
             margin-bottom: 12px;
@@ -1022,7 +1037,7 @@
         }
 
         .memo-textarea:focus {
-            border-color: #1a73e8;
+            border-color: #2f6f4e;
         }
 
         body.dark-mode .memo-textarea {
@@ -1045,8 +1060,17 @@
             font-size: 13px;
             font-weight: 500;
         }
-        .btn-primary { background: #1a73e8; color: white; }
+        .btn-primary { background: #2f6f4e; color: white; }
         .btn-secondary { background: transparent; color: #5f6368; }
+        .btn-outline {
+            background: #ffffff;
+            border: 1px solid #2f6f4e;
+            color: #2f6f4e;
+        }
+        .btn-muted {
+            background: #f1f3f4;
+            color: #5f6368;
+        }
         
         .flash-success { color: #137333; background-color: #e6f4ea; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-left: 8px; }
         .offline-status { color: #5f6368; background-color: #fef7e0; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-left: 8px; }
@@ -1079,7 +1103,7 @@
     </div>
 
     <div id="settingsSection" class="spa-section settings-container">
-        <div class="spa-card-wide">
+        <div class="spa-card-wide settings-page-card">
             <h2>アカウント設定</h2>
             <div class="alert-text" id="settingsAlert"></div>
             <form id="settingsForm" onsubmit="handleSettingsSubmit(event)">
@@ -1100,8 +1124,8 @@
         </div>
     </div>
 
-    <div id="labelSection" class="spa-section settings-container" style="overflow-y: auto; overflow-x: hidden; align-items: flex-start;">
-        <div class="spa-card-wide" style="margin-top: 20px; margin-bottom: 20px; box-sizing: border-box;">
+    <div id="labelSection" class="spa-section settings-container">
+        <div class="spa-card-wide settings-page-card">
             <h2>ラベル設定</h2>
             
             <div style="border: 1px solid #dadce0; padding: 12px; border-radius: 6px; margin-bottom: 20px; background-color: #fafafa; box-sizing: border-box;">
@@ -1127,9 +1151,9 @@
         </div>
     </div>
 
-    <div id="lunaTreeSection" class="spa-section settings-container" style="overflow-y: auto; overflow-x: hidden; align-items: flex-start;">
+    <div id="lunaTreeSection" class="spa-section settings-container">
         <div class="luna-tree-page">
-            <div class="spa-card-wide" style="max-width: 760px; margin-top: 20px; margin-bottom: 20px; box-sizing: border-box;">
+            <div class="spa-card-wide settings-page-card luna-tree-card">
                 <h2>LunaTree</h2>
                 <div class="alert-text" id="lunaTreeAlert"></div>
 
@@ -1306,7 +1330,7 @@
             <input type="hidden" id="editingEventId">
             
             <div class="modal-btns">
-                <button class="btn" style="background-color:#d93025; color:white; display:none; margin-right:auto;" id="btnDeleteModal" onclick="deleteEventFromModal()">削除</button>
+                <button class="btn" style="background-color:#8f1f2d; color:white; display:none; margin-right:auto;" id="btnDeleteModal" onclick="deleteEventFromModal()">削除</button>
                 <button class="btn btn-secondary" onclick="closeRegisterModal()">キャンセル</button>
                 <button class="btn btn-primary" onclick="saveEvent()">保存</button>
             </div>
@@ -1316,8 +1340,8 @@
             <div class="drag-action-title">予定をどうしますか？</div>
             <div class="drag-action-summary" id="eventDragActionSummary"></div>
             <div class="modal-btns">
-                <button class="btn btn-secondary" onclick="closeEventDragActionModal(true)">キャンセル</button>
-                <button class="btn btn-secondary" id="eventDragCopyButton" onclick="confirmDayCardDropAction('copy')">コピー</button>
+                <button class="btn btn-muted" onclick="closeEventDragActionModal(true)">キャンセル</button>
+                <button class="btn btn-outline" id="eventDragCopyButton" onclick="confirmDayCardDropAction('copy')">コピー</button>
                 <button class="btn btn-primary" id="eventDragMoveButton" onclick="confirmDayCardDropAction('move')">移動</button>
             </div>
         </div>
@@ -2065,8 +2089,8 @@
                     start: h.start,
                     end: h.end || h.start,
                     allDay: true,
-                    color: '#d93025',
-                    backgroundColor: '#d93025',
+                    color: '#8f1f2d',
+                    backgroundColor: '#8f1f2d',
                     extendedProps: { is_holiday: 1, is_mine: false, is_shared: true }
                 };
             });
@@ -2433,7 +2457,7 @@
                     <input type="color" id="mgmtColor-${l.id}" value="${l.color}" style="width:24px; height:24px; border:none; padding:0; background:none; cursor:pointer; border-radius:50%; -webkit-appearance:none; appearance:none; flex-shrink:0;">
                     <input type="text" id="mgmtName-${l.id}" value="${l.name}">
                     <button class="btn btn-primary" style="font-size:12px; padding:4px 8px; cursor:pointer;" onclick="updateLabel(${l.id})">保存</button>
-                    <button class="btn" style="font-size:12px; padding:4px 8px; background-color:#d93025; color:white; cursor:pointer;" onclick="deleteLabel(${l.id})">削除</button>
+                    <button class="btn" style="font-size:12px; padding:4px 8px; background-color:#8f1f2d; color:white; cursor:pointer;" onclick="deleteLabel(${l.id})">削除</button>
                 </div>
             `;
 
@@ -2850,16 +2874,14 @@
                     
                     const isHoliday = ev.extendedProps?.is_holiday === 1;
                     const isLunaTree = isLunaTreeEvent(ev);
-                    const eventColor = isHoliday ? '#d93025' : (ev.color || (ev.extendedProps.is_shared ? '#8fa89b' : '#7a94a6'));
+                    const eventColor = isHoliday ? '#8f1f2d' : (ev.color || (ev.extendedProps.is_shared ? '#8fa89b' : '#7a94a6'));
                     const isMine = ev.extendedProps.is_mine;
                     
                     let rightInfoHtml = "";
                     if (isHoliday) {
-                        rightInfoHtml = `<span style="font-size:11px; color:#d93025; font-weight:bold;">祝日</span>`;
+                        rightInfoHtml = `<span style="font-size:11px; color:#8f1f2d; font-weight:bold;">祝日</span>`;
                     } else if (isLunaTree) {
                         rightInfoHtml = `<span style="font-size:11px; color:#9aa0a6;">LunaTree</span>`;
-                    } else if (!isMine) {
-                        rightInfoHtml = `<span style="font-size:11px; color:#9aa0a6;">相手の予定</span>`;
                     }
 
                     let timeSuffixInfo = `<span style="font-size:11px; color:#70757a; font-weight:normal; margin-left:8px;">終日</span>`;
@@ -2872,14 +2894,14 @@
                     } else if (!ev.allDay && ev.start.includes('T')) {
                         const sTime = ev.start.split('T')[1].substring(0, 5);
                         const eTime = ev.end.includes('T') ? ev.end.split('T')[1].substring(0, 5) : "";
-                        timeSuffixInfo = `<span style="font-size:12px; color:#1a73e8; font-weight:normal; margin-left:8px;">${sTime}${eTime ? '～' + eTime : ''}</span>`;
+                        timeSuffixInfo = `<span style="font-size:12px; color:#2f6f4e; font-weight:normal; margin-left:8px;">${sTime}${eTime ? '～' + eTime : ''}</span>`;
                     }
 
                     item.innerHTML = `
                         <div style="display:flex; align-items:center; overflow:hidden; flex:1; justify-content:space-between; margin-right:12px;">
                             <div style="display:flex; align-items:center; overflow:hidden;">
                                 <div class="day-event-dot" style="background-color: ${eventColor};"></div>
-                                <span style="font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; ${isHoliday ? 'color:#d93025; font-weight:bold;' : ''}">${ev.title}</span>
+                                <span style="font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; ${isHoliday ? 'color:#8f1f2d; font-weight:bold;' : ''}">${ev.title}</span>
                             </div>
                             ${timeSuffixInfo}
                         </div>
@@ -3142,7 +3164,7 @@
 
             // ダークモード状態に応じて祝日データの適用色を動的に変更する
             const isDarkMode = document.body.classList.contains('dark-mode');
-            const holidayColor = isDarkMode ? '#b31412' : '#d93025';
+            const holidayColor = isDarkMode ? '#6f1726' : '#8f1f2d';
             
             const updatedHolidays = cachedHolidays.map(h => {
                 return { 
