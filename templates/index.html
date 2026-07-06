@@ -55,8 +55,8 @@
             color: #e8eaed;
         }
         body.dark-mode .menu-item-label:has(input:checked) {
-            background-color: #38444d;
-            color: #8ab4f8;
+            background-color: #263b2f;
+            color: #9cc9aa;
         }
         body.dark-mode .select-styled, body.dark-mode .drawer-input, body.dark-mode .label-mgmt-item input[type="text"] {
             background-color: #2d2d2d;
@@ -86,7 +86,7 @@
             color: #e8eaed;
         }
         body.dark-mode .fc .fc-daygrid-day.fc-day-sat { background-color: #101f30; }
-        body.dark-mode .fc .fc-daygrid-day.fc-day-sun { background-color: #2d1919; }
+        body.dark-mode .fc .fc-daygrid-day.fc-day-sun { background-color: #2b1720; }
         body.dark-mode .fc .fc-toolbar .fc-menuButton-button { color: #e8eaed !important; }
         body.dark-mode .auth-container, body.dark-mode .settings-container {
             background-color: #121212;
@@ -129,6 +129,12 @@
         body.dark-mode .modal {
             background-color: #1f1f1f;
             box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+        }
+        body.dark-mode .drag-action-title {
+            color: #e8eaed;
+        }
+        body.dark-mode .drag-action-summary {
+            color: #9aa0a6;
         }
         body.dark-mode .modal input[type="text"] {
             border-bottom: 2px solid #3c4043;
@@ -181,18 +187,23 @@
             box-sizing: border-box;
         }
         .settings-container {
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
-            min-height: 100vh;
-            min-height: 100dvh;
+            height: 100%;
+            min-height: 0;
             background-color: #f4f6f9;
             margin: 0;
-            padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
+            padding: calc(12px + env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom));
             box-sizing: border-box;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        input[type="checkbox"], input[type="radio"] {
+            accent-color: #2f6f4e;
         }
         .spa-card {
             background: white;
-            padding: 30px;
+            padding: 22px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             width: 100%;
@@ -200,20 +211,30 @@
         }
         .spa-card-wide {
             background: white;
-            padding: 30px;
+            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
         }
-        .spa-card h2, .spa-card-wide h2 { margin-top: 0; text-align: center; color: #333; }
+        .settings-page-card {
+            margin: 8px 0;
+            box-sizing: border-box;
+        }
+        .spa-card h2, .spa-card-wide h2 {
+            margin-top: 0;
+            margin-bottom: 18px;
+            text-align: center;
+            color: #245b3a;
+            font-size: 20px;
+        }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #666; font-weight: bold; }
         .form-group input[type="text"], .form-group input[type="password"] {
             width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px;
         }
-        .btn-block { width: 100%; padding: 10px; background-color: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: 500; }
-        .btn-block:hover { background-color: #1557b0; }
+        .btn-block { width: 100%; padding: 10px; background-color: #2f6f4e; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: 500; }
+        .btn-block:hover { background-color: #245b3a; }
         
         .settings-btns { display: flex; gap: 10px; margin-top: 20px; }
         .btn-cancel { background-color: #6c757d; text-align: center; text-decoration: none; color: white; padding: 10px; border-radius: 4px; flex: 1; font-size: 16px; border: none; cursor: pointer; }
@@ -221,7 +242,7 @@
         .btn-save { flex: 1; padding: 10px; }
         
         .help-text { font-size: 12px; color: #6c757d; margin-top: 4px; font-weight: normal; }
-        .alert-text { color: red; font-size: 14px; text-align: center; margin-bottom: 10px; min-height: 18px; }
+        .alert-text { color: #8f1f2d; font-size: 14px; text-align: center; margin-bottom: 10px; min-height: 18px; }
 
         /* 最上部アプリバー（成功時フラッシュメッセージとセーフエリア確保用） */
         .app-bar {
@@ -325,8 +346,8 @@
         }
         .menu-item-label input { margin-right: 12px; }
         .menu-item-label:has(input:checked) {
-            background-color: #e8f0fe;
-            color: #1a73e8;
+            background-color: #e7f0ea;
+            color: #2f6f4e;
             font-weight: 500;
         }
 
@@ -360,8 +381,8 @@
             box-sizing: border-box;
         }
         .btn-sidebar:hover, .btn-sidebar:active { background-color: #f8f9fa; }
-        .btn-logout { color: #d93025; }
-        .btn-logout:active { background-color: #fce8e6; }
+        .btn-logout { color: #8f1f2d; }
+        .btn-logout:active { background-color: #f8e7eb; }
 
         .drawer-input {
             padding: 6px 8px;
@@ -457,7 +478,7 @@
         /* FullCalendar 微調整 */
         .fc {
             --fc-border-color: #f1f3f4;
-            --fc-today-bg-color: #e8f0fe !important;
+            --fc-today-bg-color: #e7f0ea !important;
             font-size: 10px !important; 
             height: 100%;
             display: flex;
@@ -524,7 +545,7 @@
         .fc .fc-today-button {
             background-color: transparent !important;
             border: none !important;
-            color: #1a73e8 !important;
+            color: #2f6f4e !important;
             padding: 4px 8px !important;
             box-shadow: none !important;
             font-size: 14px !important;
@@ -532,12 +553,12 @@
         }
 
         /* 曜日・日付の色付け設定（土曜日を青、日曜日を赤） */
-        .fc .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion { color: #1a73e8 !important; }
-        .fc .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion { color: #d93025 !important; }
+        .fc .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion { color: #2f6f4e !important; }
+        .fc .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion { color: #8f1f2d !important; }
         .fc .fc-daygrid-day.fc-day-sat { background-color: #f1f7fe; }
         .fc .fc-daygrid-day.fc-day-sun { background-color: #fdf2f2; }
-        .fc .fc-daygrid-day.fc-day-sat .fc-daygrid-day-number { color: #1a73e8 !important; }
-        .fc .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number { color: #d93025 !important; }
+        .fc .fc-daygrid-day.fc-day-sat .fc-daygrid-day-number { color: #2f6f4e !important; }
+        .fc .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number { color: #8f1f2d !important; }
 
         .fc .fc-col-header-cell-cushion { font-size: 10px; color: #70757a; padding: 4px 0 !important; text-decoration: none !important; }
         .fc .fc-daygrid-day-number { font-size: 10px; color: #3c4043; padding: 2px 4px !important; text-decoration: none !important; }
@@ -690,6 +711,29 @@
             user-select: none;
             -webkit-user-select: none;
         }
+        .day-event-item.day-event-draggable {
+            cursor: grab;
+            touch-action: none;
+        }
+        .day-event-item.day-event-draggable:active {
+            cursor: grabbing;
+        }
+        .day-event-drag-ghost {
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 2000;
+            pointer-events: none;
+            opacity: 0.92;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.24);
+            transform: translate3d(-9999px, -9999px, 0);
+            max-width: min(360px, calc(100vw - 24px));
+        }
+        .fc .fc-daygrid-day.day-card-drop-target .fc-daygrid-day-frame {
+            outline: 2px solid #2f6f4e;
+            outline-offset: -2px;
+            background-color: rgba(47, 111, 78, 0.12);
+        }
         .day-event-dot {
             width: 10px;
             height: 10px;
@@ -704,7 +748,7 @@
             right: 20px;
             width: 48px;
             height: 48px;
-            background-color: #1a73e8;
+            background-color: #2f6f4e;
             color: white;
             border-radius: 50%;
             display: flex;
@@ -716,7 +760,20 @@
             cursor: pointer;
             z-index: 10;
         }
-        .fab-add:active { background-color: #1557b0; }
+        .fab-add:active { background-color: #245b3a; }
+
+        .drag-action-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #3c4043;
+        }
+        .drag-action-summary {
+            font-size: 13px;
+            color: #5f6368;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
 
         /* 予定登録ポップアップ */
         .modal { 
@@ -751,7 +808,7 @@
             color: #3c4043;
             box-sizing: border-box;
         }
-        .modal input[type="text"]:focus { border-bottom-color: #1a73e8; }
+        .modal input[type="text"]:focus { border-bottom-color: #2f6f4e; }
         
         .modal-field {
             margin-bottom: 12px;
@@ -794,7 +851,7 @@
         }
 
         .memo-textarea:focus {
-            border-color: #1a73e8;
+            border-color: #2f6f4e;
         }
 
         body.dark-mode .memo-textarea {
@@ -817,8 +874,17 @@
             font-size: 13px;
             font-weight: 500;
         }
-        .btn-primary { background: #1a73e8; color: white; }
+        .btn-primary { background: #2f6f4e; color: white; }
         .btn-secondary { background: transparent; color: #5f6368; }
+        .btn-outline {
+            background: #ffffff;
+            border: 1px solid #2f6f4e;
+            color: #2f6f4e;
+        }
+        .btn-muted {
+            background: #f1f3f4;
+            color: #5f6368;
+        }
         
         .flash-success { color: #137333; background-color: #e6f4ea; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-left: 8px; }
         .offline-status { color: #5f6368; background-color: #fef7e0; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-left: 8px; }
@@ -851,7 +917,7 @@
     </div>
 
     <div id="settingsSection" class="spa-section settings-container">
-        <div class="spa-card-wide">
+        <div class="spa-card-wide settings-page-card">
             <h2>アカウント設定</h2>
             <div class="alert-text" id="settingsAlert"></div>
             <form id="settingsForm" onsubmit="handleSettingsSubmit(event)">
@@ -872,8 +938,8 @@
         </div>
     </div>
 
-    <div id="labelSection" class="spa-section settings-container" style="overflow-y: auto; overflow-x: hidden; align-items: flex-start;">
-        <div class="spa-card-wide" style="margin-top: 20px; margin-bottom: 20px; box-sizing: border-box;">
+    <div id="labelSection" class="spa-section settings-container">
+        <div class="spa-card-wide settings-page-card">
             <h2>ラベル設定</h2>
             
             <div style="border: 1px solid #dadce0; padding: 12px; border-radius: 6px; margin-bottom: 20px; background-color: #fafafa; box-sizing: border-box;">
@@ -1026,9 +1092,19 @@
             <input type="hidden" id="editingEventId">
             
             <div class="modal-btns">
-                <button class="btn" style="background-color:#d93025; color:white; display:none; margin-right:auto;" id="btnDeleteModal" onclick="deleteEventFromModal()">削除</button>
+                <button class="btn" style="background-color:#8f1f2d; color:white; display:none; margin-right:auto;" id="btnDeleteModal" onclick="deleteEventFromModal()">削除</button>
                 <button class="btn btn-secondary" onclick="closeRegisterModal()">キャンセル</button>
                 <button class="btn btn-primary" onclick="saveEvent()">保存</button>
+            </div>
+        </div>
+
+        <div class="modal" id="eventDragActionModal">
+            <div class="drag-action-title">予定をどうしますか？</div>
+            <div class="drag-action-summary" id="eventDragActionSummary"></div>
+            <div class="modal-btns">
+                <button class="btn btn-muted" onclick="closeEventDragActionModal(true)">キャンセル</button>
+                <button class="btn btn-outline" id="eventDragCopyButton" onclick="confirmDayCardDropAction('copy')">コピー</button>
+                <button class="btn btn-primary" id="eventDragMoveButton" onclick="confirmDayCardDropAction('move')">移動</button>
             </div>
         </div>
     </div>
@@ -1044,6 +1120,10 @@
         let lastSelectedLabelId = null;
         let calendarDataInitialized = false;
         let currentDataRangeKey = '';
+        let suppressCalendarSwipeUntil = 0;
+        let dayCardDragState = null;
+        let pendingDayCardDrop = null;
+        let suppressDayCardClickUntil = 0;
 
         function getUserCacheIdentity(user) {
             if (!user) return 'anonymous';
@@ -1179,8 +1259,10 @@
                 document.getElementById('loginSection').style.display = 'flex';
             } else if (sectionId === 'settings') {
                 document.getElementById('settingsSection').style.display = 'flex';
+                document.getElementById('settingsSection').scrollTop = 0;
             } else if (sectionId === 'label') {
                 document.getElementById('labelSection').style.display = 'flex';
+                document.getElementById('labelSection').scrollTop = 0;
             }
         }
 
@@ -1491,6 +1573,243 @@
             return `${yyyy}-${m}-${d}`;
         }
 
+        function formatDateForEventPayload(dateObj, allDay) {
+            const yyyy = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            if (allDay) return `${yyyy}-${m}-${d}`;
+
+            const hh = String(dateObj.getHours()).padStart(2, '0');
+            const mm = String(dateObj.getMinutes()).padStart(2, '0');
+            const ss = String(dateObj.getSeconds()).padStart(2, '0');
+            return `${yyyy}-${m}-${d}T${hh}:${mm}:${ss}`;
+        }
+
+        function parseEventDateForDrag(value, allDay) {
+            if (!value) return null;
+            const datePart = value.split('T')[0];
+            const parts = datePart.split('-').map(part => parseInt(part, 10));
+            if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+            if (allDay || !value.includes('T')) return new Date(parts[0], parts[1] - 1, parts[2]);
+
+            const timeParts = value.split('T')[1].split(':').map(part => parseInt(part, 10));
+            return new Date(parts[0], parts[1] - 1, parts[2], timeParts[0] || 0, timeParts[1] || 0, timeParts[2] || 0);
+        }
+
+        function isDayCardEventDragAllowed(eventData) {
+            const props = eventData.extendedProps || {};
+            if (props.is_holiday) return false;
+            if (props.recurrence) return false;
+            if (typeof isLunaTreeEvent === 'function' && isLunaTreeEvent(eventData)) return false;
+            return props.is_shared === true || props.is_mine !== false;
+        }
+
+        function buildPayloadForDayCardDrop(eventData, targetDate) {
+            const props = eventData.extendedProps || {};
+            const allDay = !!eventData.allDay;
+            const originalStart = parseEventDateForDrag(eventData.start, allDay);
+            let originalEnd = parseEventDateForDrag(eventData.end, allDay);
+            if (!originalStart) throw new Error('Invalid start date');
+            if (!originalEnd) {
+                originalEnd = new Date(originalStart.getTime() + (allDay ? 86400000 : 0));
+            }
+
+            const durationMs = Math.max(allDay ? 86400000 : 0, originalEnd.getTime() - originalStart.getTime());
+            const targetStartBase = parseEventDateForDrag(
+                allDay ? targetDate : `${targetDate}T${String(originalStart.getHours()).padStart(2, '0')}:${String(originalStart.getMinutes()).padStart(2, '0')}:${String(originalStart.getSeconds()).padStart(2, '0')}`,
+                allDay
+            );
+            const targetEnd = new Date(targetStartBase.getTime() + durationMs);
+
+            return {
+                title: eventData.title,
+                start: formatDateForEventPayload(targetStartBase, allDay),
+                end: formatDateForEventPayload(targetEnd, allDay),
+                memo: props.memo || '',
+                allDay,
+                is_all_day: allDay,
+                label_id: props.label_id || null,
+                is_shared: !!props.is_shared,
+                recurrence: props.recurrence || ''
+            };
+        }
+
+        function setDayCardDropTarget(dateStr) {
+            document.querySelectorAll('.day-card-drop-target').forEach(el => el.classList.remove('day-card-drop-target'));
+            if (!dateStr) return;
+            const target = document.querySelector(`.fc-daygrid-day[data-date="${dateStr}"]`);
+            if (target) target.classList.add('day-card-drop-target');
+        }
+
+        function getCalendarDateFromPoint(x, y) {
+            const element = document.elementFromPoint(x, y);
+            const dayCell = element?.closest?.('.fc-daygrid-day[data-date]');
+            return dayCell ? dayCell.getAttribute('data-date') : '';
+        }
+
+        function updateDayCardDragGhost(state, x, y) {
+            if (state.ghost) {
+                state.ghost.style.transform = `translate3d(${x + 12}px, ${y + 12}px, 0)`;
+            }
+            state.targetDate = getCalendarDateFromPoint(x, y);
+            setDayCardDropTarget(state.targetDate);
+        }
+
+        function hideDaySheetForDrag() {
+            const sheet = document.getElementById('daySheet');
+            sheet.classList.remove('open');
+            sheet.style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        function finishDayCardDragState() {
+            if (!dayCardDragState) return null;
+            const state = dayCardDragState;
+            if (state.timer) clearTimeout(state.timer);
+            document.removeEventListener('pointermove', state.onPointerMove);
+            document.removeEventListener('pointerup', state.onPointerUp);
+            document.removeEventListener('pointercancel', state.onPointerCancel);
+            if (state.ghost) state.ghost.remove();
+            setDayCardDropTarget('');
+            dayCardDragState = null;
+            return state;
+        }
+
+        function startDayCardDrag(state, pointerEvent) {
+            state.active = true;
+            suppressCalendarSwipeUntil = Date.now() + 1500;
+            suppressDayCardClickUntil = Date.now() + 1000;
+            state.ghost = state.item.cloneNode(true);
+            state.ghost.classList.add('day-event-drag-ghost');
+            state.ghost.style.width = `${Math.min(state.item.offsetWidth, window.innerWidth - 24)}px`;
+            document.body.appendChild(state.ghost);
+            hideDaySheetForDrag();
+            updateDayCardDragGhost(state, pointerEvent.clientX, pointerEvent.clientY);
+        }
+
+        function attachDayCardDragHandlers(item, eventData) {
+            item.classList.add('day-event-draggable');
+            item.addEventListener('contextmenu', event => event.preventDefault());
+            item.addEventListener('pointerdown', function(pointerEvent) {
+                if (pointerEvent.button !== undefined && pointerEvent.button !== 0) return;
+                const state = {
+                    item,
+                    eventData,
+                    startX: pointerEvent.clientX,
+                    startY: pointerEvent.clientY,
+                    active: false,
+                    targetDate: '',
+                    ghost: null,
+                    timer: null
+                };
+
+                state.onPointerMove = function(moveEvent) {
+                    const distance = Math.hypot(moveEvent.clientX - state.startX, moveEvent.clientY - state.startY);
+                    if (!state.active && distance > 10) {
+                        finishDayCardDragState();
+                        return;
+                    }
+                    if (state.active) {
+                        moveEvent.preventDefault();
+                        suppressCalendarSwipeUntil = Date.now() + 800;
+                        updateDayCardDragGhost(state, moveEvent.clientX, moveEvent.clientY);
+                    }
+                };
+                state.onPointerUp = function(upEvent) {
+                    const finished = finishDayCardDragState();
+                    if (!finished?.active) return;
+                    upEvent.preventDefault();
+                    suppressDayCardClickUntil = Date.now() + 800;
+                    const targetDate = finished.targetDate || getCalendarDateFromPoint(upEvent.clientX, upEvent.clientY);
+                    if (targetDate) {
+                        openEventDragActionModal(finished.eventData, targetDate);
+                    } else if (selectedDateStr) {
+                        openDaySheet(selectedDateStr);
+                    }
+                };
+                state.onPointerCancel = function() {
+                    const finished = finishDayCardDragState();
+                    if (finished?.active && selectedDateStr) openDaySheet(selectedDateStr);
+                };
+
+                dayCardDragState = state;
+                document.addEventListener('pointermove', state.onPointerMove, { passive: false });
+                document.addEventListener('pointerup', state.onPointerUp, { passive: false });
+                document.addEventListener('pointercancel', state.onPointerCancel, { passive: false });
+                state.timer = setTimeout(() => startDayCardDrag(state, pointerEvent), 500);
+            });
+        }
+
+        function openEventDragActionModal(eventData, targetDate) {
+            pendingDayCardDrop = { eventData, targetDate };
+            const summary = document.getElementById('eventDragActionSummary');
+            summary.textContent = `${eventData.title} → ${targetDate}`;
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('eventDragActionModal').style.display = 'block';
+            setEventDragActionBusy(false);
+        }
+
+        function setEventDragActionBusy(isBusy) {
+            ['eventDragCopyButton', 'eventDragMoveButton'].forEach(id => {
+                const button = document.getElementById(id);
+                if (button) button.disabled = isBusy;
+            });
+        }
+
+        function closeEventDragActionModal(reopenSheet) {
+            document.getElementById('eventDragActionModal').style.display = 'none';
+            pendingDayCardDrop = null;
+            setEventDragActionBusy(false);
+            if (reopenSheet && selectedDateStr) {
+                openDaySheet(selectedDateStr);
+                return;
+            }
+            if (document.getElementById('eventModal').style.display !== 'block' && !document.getElementById('daySheet').classList.contains('open')) {
+                document.getElementById('overlay').style.display = 'none';
+            }
+        }
+
+        function confirmDayCardDropAction(action) {
+            if (!pendingDayCardDrop) return;
+            const { eventData, targetDate } = pendingDayCardDrop;
+            let payload;
+            try {
+                payload = buildPayloadForDayCardDrop(eventData, targetDate);
+            } catch (error) {
+                console.error(error);
+                alert('予定の日付を変更できませんでした。');
+                closeEventDragActionModal(true);
+                return;
+            }
+
+            const eventId = eventData.extendedProps?.original_id || eventData.id;
+            const isCopy = action === 'copy';
+            const url = isCopy ? '/api/events' : `/api/events/${eventId}`;
+            const method = isCopy ? 'POST' : 'PUT';
+            setEventDragActionBusy(true);
+
+            fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (!res.ok) throw new Error(`サーバーエラー (Status: ${res.status})`);
+                return res.json();
+            })
+            .then(data => {
+                if (!data.success) throw new Error(data.error || '保存に失敗しました');
+                closeEventDragActionModal(false);
+                return refreshEvents();
+            })
+            .then(() => openDaySheet(targetDate))
+            .catch(err => {
+                console.error(err);
+                alert('予定を保存できませんでした。');
+                setEventDragActionBusy(false);
+            });
+        }
+
         function filterModalLabels(isEdit, currentLabelId) {
             const isSharedChecked = document.getElementById('isShared').checked;
             const select = document.getElementById('eventLabelSelect');
@@ -1547,7 +1866,7 @@
                     <input type="color" id="mgmtColor-${l.id}" value="${l.color}" style="width:24px; height:24px; border:none; padding:0; background:none; cursor:pointer; border-radius:50%; -webkit-appearance:none; appearance:none; flex-shrink:0;">
                     <input type="text" id="mgmtName-${l.id}" value="${l.name}">
                     <button class="btn btn-primary" style="font-size:12px; padding:4px 8px; cursor:pointer;" onclick="updateLabel(${l.id})">保存</button>
-                    <button class="btn" style="font-size:12px; padding:4px 8px; background-color:#d93025; color:white; cursor:pointer;" onclick="deleteLabel(${l.id})">削除</button>
+                    <button class="btn" style="font-size:12px; padding:4px 8px; background-color:#8f1f2d; color:white; cursor:pointer;" onclick="deleteLabel(${l.id})">削除</button>
                 </div>
             `;
 
@@ -1890,6 +2209,7 @@
             let touchEndY = 0;
             calendarEl.addEventListener('touchstart', function(e) { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
             calendarEl.addEventListener('touchend', function(e) {
+                if (Date.now() < suppressCalendarSwipeUntil) return;
                 touchEndY = e.changedTouches[0].screenY;
                 if (!isAnimating) {
                     const diff = touchStartY - touchEndY;
@@ -1982,8 +2302,6 @@
                     let rightInfoHtml = "";
                     if (isHoliday) {
                         rightInfoHtml = `<span style="font-size:11px; color:#d93025; font-weight:bold;">祝日</span>`;
-                    } else if (!isMine) {
-                        rightInfoHtml = `<span style="font-size:11px; color:#9aa0a6;">相手の予定</span>`;
                     }
 
                     let timeSuffixInfo = `<span style="font-size:11px; color:#70757a; font-weight:normal; margin-left:8px;">終日</span>`;
@@ -1992,7 +2310,7 @@
                     } else if (!ev.allDay && ev.start.includes('T')) {
                         const sTime = ev.start.split('T')[1].substring(0, 5);
                         const eTime = ev.end.includes('T') ? ev.end.split('T')[1].substring(0, 5) : "";
-                        timeSuffixInfo = `<span style="font-size:12px; color:#1a73e8; font-weight:normal; margin-left:8px;">${sTime}${eTime ? '～' + eTime : ''}</span>`;
+                        timeSuffixInfo = `<span style="font-size:12px; color:#2f6f4e; font-weight:normal; margin-left:8px;">${sTime}${eTime ? '～' + eTime : ''}</span>`;
                     }
 
                     item.innerHTML = `
@@ -2006,9 +2324,15 @@
                         ${rightInfoHtml}
                     `;
                     
+                    if (!isHoliday && isDayCardEventDragAllowed(ev)) {
+                        attachDayCardDragHandlers(item, ev);
+                    }
+
                     if (!isHoliday) {
-                        item.style.cursor = 'pointer';
-                        item.onclick = function() { openEditModal(ev); };
+                        item.onclick = function() {
+                            if (Date.now() < suppressDayCardClickUntil) return;
+                            openEditModal(ev);
+                        };
                     }
                     listContainer.appendChild(item);
                 });
@@ -2100,7 +2424,7 @@
                 document.getElementById('overlay').style.display = 'none';
             }
         }
-        function closeAllModals() { closeDaySheet(); closeRegisterModal(); }
+        function closeAllModals() { closeDaySheet(); closeRegisterModal(); closeEventDragActionModal(false); }
 
         function saveEvent() {
             const titleVal = document.getElementById('eventTitle').value.trim();
