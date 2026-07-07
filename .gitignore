@@ -10,3 +10,5 @@ static/* copy.js
 .env
 .venv/
 venv/
+
+gh-pages/
