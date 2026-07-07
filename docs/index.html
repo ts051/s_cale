@@ -662,9 +662,10 @@
             border-left: none !important;
             box-shadow: none !important;
         }
-        .fc-event-lunatree {
-            background-color: var(--fc-event-bg-alpha-color, rgba(209, 91, 134, 0.15)) !important;
-            color: var(--fc-event-text-solid-color, #d15b86) !important;
+        .fc-daygrid-event.fc-event-lunatree {
+            background-color: var(--fc-event-bg-solid-color, #d15b86) !important;
+            border-color: var(--fc-event-bg-solid-color, #d15b86) !important;
+            color: #ffffff !important;
             font-weight: 700 !important;
         }
         body.dark-mode .fc-event-holiday {
@@ -674,9 +675,10 @@
             border-left: none !important;
             box-shadow: none !important;
         }
-        body.dark-mode .fc-event-lunatree {
-            background-color: var(--fc-event-bg-alpha-color, rgba(185, 79, 118, 0.25)) !important;
-            color: var(--fc-event-text-solid-color, #e8eaed) !important;
+        body.dark-mode .fc-daygrid-event.fc-event-lunatree {
+            background-color: var(--fc-event-bg-solid-color, #b94f76) !important;
+            border-color: var(--fc-event-bg-solid-color, #b94f76) !important;
+            color: #ffffff !important;
         }
 
         .luna-tree-page {
@@ -2979,6 +2981,7 @@
                     if (!info.event.extendedProps.is_holiday) {
                         const baseColor = info.event.backgroundColor || '#7a94a6';
                         info.el.style.setProperty('--fc-event-bg-alpha-color', hexToRgba(baseColor, 0.15));
+                        info.el.style.setProperty('--fc-event-bg-solid-color', baseColor);
                         info.el.style.setProperty('--fc-event-text-solid-color', baseColor);
                     }
                 },
