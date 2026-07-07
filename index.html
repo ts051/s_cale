@@ -663,8 +663,8 @@
             box-shadow: none !important;
         }
         .fc-event-lunatree {
-            background-color: #d15b86 !important;
-            color: #ffffff !important;
+            background-color: var(--fc-event-bg-alpha-color, rgba(209, 91, 134, 0.15)) !important;
+            color: var(--fc-event-text-solid-color, #d15b86) !important;
             font-weight: 700 !important;
         }
         body.dark-mode .fc-event-holiday {
@@ -675,8 +675,8 @@
             box-shadow: none !important;
         }
         body.dark-mode .fc-event-lunatree {
-            background-color: #b94f76 !important;
-            color: #ffffff !important;
+            background-color: var(--fc-event-bg-alpha-color, rgba(185, 79, 118, 0.25)) !important;
+            color: var(--fc-event-text-solid-color, #e8eaed) !important;
         }
 
         .luna-tree-page {
@@ -2976,7 +2976,7 @@
                             if (titleEl) titleEl.textContent = `${LUNA_TREE_TITLE} 予定`;
                         }
                     }
-                    if (!info.event.allDay && !info.event.extendedProps.is_holiday) {
+                    if (!info.event.extendedProps.is_holiday) {
                         const baseColor = info.event.backgroundColor || '#7a94a6';
                         info.el.style.setProperty('--fc-event-bg-alpha-color', hexToRgba(baseColor, 0.15));
                         info.el.style.setProperty('--fc-event-text-solid-color', baseColor);
@@ -3148,6 +3148,8 @@
                     
                     const isHoliday = ev.extendedProps?.is_holiday === 1;
                     const isLunaTree = isLunaTreeEvent(ev);
+                    const lunaTreeMeta = isLunaTree ? parseLunaTreeMeta(ev) : null;
+                    const displayTitle = isLunaTree && lunaTreeMeta?.planned ? `${LUNA_TREE_TITLE} 予定` : ev.title;
                     const eventColor = isHoliday ? '#d93025' : (ev.color || (ev.extendedProps.is_shared ? '#8fa89b' : '#7a94a6'));
                     const isMine = ev.extendedProps.is_mine;
                     
@@ -3162,9 +3164,7 @@
                     if (isHoliday) {
                         timeSuffixInfo = ""; 
                     } else if (isLunaTree) {
-                        const meta = parseLunaTreeMeta(ev);
-                        const lunaTreeSuffix = meta?.planned ? '予定' : `${meta?.periodLength || 1}日間`;
-                        timeSuffixInfo = `<span style="font-size:11px; color:#70757a; font-weight:normal; margin-left:8px;">${lunaTreeSuffix}</span>`;
+                        timeSuffixInfo = lunaTreeMeta?.planned ? "" : `<span style="font-size:11px; color:#70757a; font-weight:normal; margin-left:8px;">${lunaTreeMeta?.periodLength || 1}日間</span>`;
                     } else if (!ev.allDay && ev.start.includes('T')) {
                         const sTime = ev.start.split('T')[1].substring(0, 5);
                         const eTime = ev.end.includes('T') ? ev.end.split('T')[1].substring(0, 5) : "";
@@ -3175,7 +3175,7 @@
                         <div style="display:flex; align-items:center; overflow:hidden; flex:1; justify-content:space-between; margin-right:12px;">
                             <div style="display:flex; align-items:center; overflow:hidden;">
                                 <div class="day-event-dot" style="background-color: ${eventColor};"></div>
-                                <span style="font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; ${isHoliday ? 'color:#d93025; font-weight:bold;' : ''}">${ev.title}</span>
+                                <span style="font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; ${isHoliday ? 'color:#d93025; font-weight:bold;' : ''}">${displayTitle}</span>
                             </div>
                             ${timeSuffixInfo}
                         </div>
