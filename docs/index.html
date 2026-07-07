@@ -768,6 +768,21 @@
             padding: 9px 10px;
             white-space: nowrap;
         }
+        .luna-tree-action-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .luna-tree-action-row .btn,
+        .luna-tree-action-row .btn-block,
+        .luna-tree-action-row .btn-cancel {
+            width: 100%;
+            min-width: 0;
+            padding: 9px 8px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
         .luna-tree-stats {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -797,7 +812,7 @@
         }
         .luna-tree-row {
             display: grid;
-            grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr) 46px 30px;
+            grid-template-columns: 50px minmax(0, 1fr) minmax(0, 1fr) 46px 30px;
             gap: 6px;
             align-items: center;
             border: 1px solid #eef0f2;
@@ -906,8 +921,19 @@
                 gap: 6px;
                 margin-bottom: 14px;
             }
+            .luna-tree-action-row {
+                gap: 6px;
+                margin-top: 10px;
+            }
+            .luna-tree-action-row .btn,
+            .luna-tree-action-row .btn-block,
+            .luna-tree-action-row .btn-cancel {
+                height: 34px;
+                padding: 7px 6px;
+                font-size: 13px;
+            }
             .luna-tree-row {
-                grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1fr) 42px 26px;
+                grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr) 42px 26px;
                 gap: 3px;
                 padding: 6px 8px;
             }
@@ -1319,12 +1345,11 @@
                             <select id="lunaTreeLabelId" class="luna-tree-select"></select>
                         </label>
                     </div>
-                </div>
-
-                <div class="luna-tree-toolbar">
-                    <input type="number" id="lunaTreeYear" class="luna-tree-input luna-tree-year" min="1900" max="2100" step="1" onchange="handleLunaTreeYearChange()">
-                    <button type="button" class="btn btn-secondary" onclick="shiftLunaTreeYear(-1)">前年</button>
-                    <button type="button" class="btn btn-secondary" onclick="shiftLunaTreeYear(1)">翌年</button>
+                    <div class="luna-tree-action-row">
+                        <button type="button" class="btn-cancel" onclick="showSection('calendar')">キャンセル</button>
+                        <button type="button" class="btn btn-secondary" onclick="addLunaTreeRow()">新規</button>
+                        <button type="button" class="btn-block btn-save" onclick="saveLunaTree()">保存</button>
+                    </div>
                 </div>
 
                 <div class="luna-tree-stats" id="lunaTreeStats">
@@ -1334,22 +1359,17 @@
                     </div>
                     <div>
                         <div class="luna-tree-stat-value" id="lunaTreeAverageCycle">-</div>
-                        <div class="luna-tree-stat-label">年平均周期</div>
+                        <div class="luna-tree-stat-label">直近12ヶ月平均周期</div>
                     </div>
                     <div>
                         <div class="luna-tree-stat-value" id="lunaTreeAveragePeriod">-</div>
-                        <div class="luna-tree-stat-label">年平均生理期間</div>
+                        <div class="luna-tree-stat-label">直近12ヶ月平均生理期間</div>
                     </div>
                 </div>
 
                 <div class="luna-tree-panel">
-                    <div class="luna-tree-muted" style="margin-bottom: 10px;">月ごとの生理開始日と終了日</div>
+                    <div class="luna-tree-muted" style="margin-bottom: 10px;">生理開始日と終了日</div>
                     <div id="lunaTreeMonthList"></div>
-                </div>
-
-                <div class="settings-btns">
-                    <button type="button" class="btn-cancel" onclick="showSection('calendar')">カレンダーに戻る</button>
-                    <button type="button" class="btn-block btn-save" onclick="saveLunaTree()">保存</button>
                 </div>
             </div>
         </div>
@@ -1803,15 +1823,12 @@
         function openLunaTreeSPA() {
             toggleDrawer(false);
             document.getElementById('lunaTreeAlert').innerText = '';
-            if (!document.getElementById('lunaTreeYear').value) {
-                document.getElementById('lunaTreeYear').value = String(new Date().getFullYear());
-            }
             showSection('lunaTree');
             loadLunaTreePage();
         }
 
-        function lunaTreeMemo(month, endDate, periodLength) {
-            return `${LUNA_TREE_MEMO_PREFIX}${JSON.stringify({ month, end_date: endDate || '', period_length: periodLength || 0, planned: !endDate, version: 3 })}`;
+        function lunaTreeMemo(month, endDate, periodLength, planned = false) {
+            return `${LUNA_TREE_MEMO_PREFIX}${JSON.stringify({ month, end_date: endDate || '', period_length: periodLength || 0, planned: !!planned, version: 4 })}`;
         }
 
         function parseLunaTreeMeta(event) {
@@ -1822,7 +1839,7 @@
                 const parsed = JSON.parse(String(memo).slice(LUNA_TREE_MEMO_PREFIX.length));
                 let periodLength = Number(parsed.period_length) || 0;
                 let endDate = parsed.end_date || '';
-                const planned = !!parsed.planned || !endDate;
+                const planned = parsed.planned === true || (parsed.version !== 4 && !endDate);
                 if (!periodLength && startDate && endDate) {
                     periodLength = getLunaTreePeriodLength(startDate, endDate);
                 }
@@ -1836,7 +1853,7 @@
                     month: parsed.month || startDate.slice(0, 7),
                     endDate,
                     periodLength,
-                    planned: !endDate
+                    planned
                 };
             } catch (error) {
                 const periodLength = getLunaTreeDuration(event) || 1;
@@ -1881,10 +1898,6 @@
             return Math.max(1, dateDiffDays(startDate, endDate) + 1);
         }
 
-        function lunaTreeMonthKey(year, monthIndex) {
-            return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
-        }
-
         function average(values) {
             const nums = values.filter(value => Number.isFinite(value) && value > 0);
             if (nums.length === 0) return null;
@@ -1906,7 +1919,7 @@
                     const start = String(event.start || '').split('T')[0];
                     return { event, meta, start };
                 })
-                .filter(item => item.meta && item.start && !item.meta.planned && item.meta.endDate)
+                .filter(item => item.meta && item.start && !item.meta.planned)
                 .sort((a, b) => a.start.localeCompare(b.start));
         }
 
@@ -1935,8 +1948,8 @@
             return average(cycles);
         }
 
-        function getLunaTreeAutoPlanMap(actualEntries) {
-            const plans = new Map();
+        function getLunaTreeAutoPlans(actualEntries) {
+            const plans = [];
             const averageCycle = getLunaTreeAverageCycle(actualEntries);
             const cycleDays = averageCycle === null ? 0 : Math.max(1, Math.round(averageCycle));
             if (cycleDays <= 0 || actualEntries.length === 0) return plans;
@@ -1944,10 +1957,7 @@
             let plannedStart = actualEntries[actualEntries.length - 1].start;
             for (let i = 0; i < 12; i += 1) {
                 plannedStart = addDaysToDateStr(plannedStart, cycleDays);
-                const month = plannedStart.slice(0, 7);
-                if (!plans.has(month)) {
-                    plans.set(month, { start: plannedStart, autoPlanned: true });
-                }
+                plans.push({ start: plannedStart, month: plannedStart.slice(0, 7), autoPlanned: true });
             }
             return plans;
         }
@@ -1957,13 +1967,13 @@
                 .map(row => {
                     const start = row.querySelector('.luna-tree-start').value;
                     const endDate = row.querySelector('.luna-tree-end').value;
-                    if (!start || !endDate) return null;
+                    if (!start) return null;
                     return {
                         event: null,
                         meta: {
-                            month: row.dataset.month || start.slice(0, 7),
+                            month: start.slice(0, 7),
                             endDate,
-                            periodLength: getLunaTreePeriodLength(start, endDate),
+                            periodLength: endDate ? getLunaTreePeriodLength(start, endDate) : 0,
                             planned: false
                         },
                         start
@@ -1974,42 +1984,23 @@
         }
 
         function getLunaTreeWorkingActualEntries() {
-            const renderedMonths = new Set(Array.from(document.querySelectorAll('.luna-tree-row')).map(row => row.dataset.month));
-            const storedOutsideRenderedMonths = getLunaTreeActualEntriesFromEvents()
-                .filter(item => !renderedMonths.has(item.meta.month || item.start.slice(0, 7)));
-            return storedOutsideRenderedMonths
-                .concat(getLunaTreeActualEntriesFromRows())
-                .sort((a, b) => a.start.localeCompare(b.start));
+            const rowEntries = getLunaTreeActualEntriesFromRows();
+            const container = document.getElementById('lunaTreeMonthList');
+            return container?.dataset.rendered === 'true' ? rowEntries : getLunaTreeActualEntriesFromEvents();
         }
 
-        function getLunaTreeYear() {
-            const input = document.getElementById('lunaTreeYear');
-            const year = Number(input.value) || new Date().getFullYear();
-            input.value = String(year);
-            return year;
-        }
-
-        function getLunaTreeRangeUrl(year) {
-            const start = `${year - 1}-01-01`;
-            const end = `${year + 1}-01-01`;
+        function getLunaTreeRangeUrl() {
+            const today = toDateParam(new Date());
+            const start = addMonthsToDateStr(today, -24);
+            const end = addMonthsToDateStr(today, 24);
             return `/api/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
         }
 
-        function loadLunaTreeEvents(year) {
-            return fetchJsonWithCache(getLunaTreeRangeUrl(year))
+        function loadLunaTreeEvents() {
+            return fetchJsonWithCache(getLunaTreeRangeUrl())
                 .then(events => {
                     lunaTreeEvents = Array.isArray(events) ? events.filter(isLunaTreeEvent) : [];
                 });
-        }
-
-        function handleLunaTreeYearChange() {
-            loadLunaTreePage();
-        }
-
-        function shiftLunaTreeYear(amount) {
-            const input = document.getElementById('lunaTreeYear');
-            input.value = String(getLunaTreeYear() + amount);
-            loadLunaTreePage();
         }
 
         function handleLunaTreeScopeChange() {
@@ -2044,9 +2035,9 @@
             populateLunaTreeLabelSelect(latest?.extendedProps?.label_id);
         }
 
-        function renderLunaTreeStats(year, actualEntries = getLunaTreeActualEntriesFromEvents()) {
-            const inYear = actualEntries.filter(item => item.start.slice(0, 4) === String(year));
-            const averagePeriod = average(inYear.filter(item => !item.meta.planned).map(item => item.meta.periodLength));
+        function renderLunaTreeStats(actualEntries = getLunaTreeActualEntriesFromEvents()) {
+            const recent = getRecentLunaTreeActualEntries(actualEntries);
+            const averagePeriod = average(recent.filter(item => item.meta.endDate).map(item => item.meta.periodLength));
             const today = toDateParam(new Date());
             const latest = actualEntries.filter(item => item.start <= today).pop();
             document.getElementById('lunaTreeElapsed').innerText = latest ? `${dateDiffDays(latest.start, today)}日` : '-';
@@ -2054,65 +2045,71 @@
             document.getElementById('lunaTreeAveragePeriod').innerText = formatLunaTreeAverage(averagePeriod);
         }
 
-        function renderLunaTreeRows(year) {
-            const container = document.getElementById('lunaTreeMonthList');
-            const byMonth = new Map();
-            const autoPlans = getLunaTreeAutoPlanMap(getLunaTreeActualEntriesFromEvents());
-            getOwnedLunaTreeEvents()
-                .sort((a, b) => String(a.start).localeCompare(String(b.start)))
-                .forEach(event => {
-                    const meta = parseLunaTreeMeta(event);
-                    const start = String(event.start || '').split('T')[0];
-                    const month = meta?.month || String(event.start || '').slice(0, 7);
-                    const existing = byMonth.get(month);
-                    if (month.slice(0, 4) === String(year) && (!existing || (existing.meta?.planned && !meta?.planned))) {
-                        byMonth.set(month, { event, meta, start });
-                    }
-                });
+        function getLunaTreeHistoryLabel(index) {
+            return index === 0 ? '前回' : `${index + 1}回前`;
+        }
 
+        function createLunaTreeRow(entry = {}) {
+            const row = document.createElement('div');
+            const startDate = entry.start || '';
+            const endDate = entry.meta?.endDate || '';
+            row.className = 'luna-tree-row';
+            row.dataset.eventId = entry.event ? getLunaTreeEventId(entry.event) : '';
+            const periodText = startDate && endDate ? `${getLunaTreePeriodLength(startDate, endDate)}日間` : (startDate ? '-' : '-');
+            row.innerHTML = `
+                <div class="luna-tree-row-label"></div>
+                <label class="luna-tree-field luna-tree-start-field">
+                    <span class="luna-tree-field-label">開始日</span>
+                    <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onchange="updateLunaTreeRowPeriod(this)">
+                </label>
+                <label class="luna-tree-field luna-tree-end-field">
+                    <span class="luna-tree-field-label">終了日</span>
+                    <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onchange="updateLunaTreeRowPeriod(this)">
+                </label>
+                <div class="luna-tree-period">${periodText}</div>
+                <button type="button" class="luna-tree-clear" title="削除" aria-label="削除" onclick="clearLunaTreeRow(this)">×</button>
+            `;
+            return row;
+        }
+
+        function refreshLunaTreeRowLabels() {
+            const container = document.getElementById('lunaTreeMonthList');
+            const rows = Array.from(container.querySelectorAll('.luna-tree-row'));
+            rows
+                .sort((a, b) => {
+                    const aStart = a.querySelector('.luna-tree-start').value || '0000-00-00';
+                    const bStart = b.querySelector('.luna-tree-start').value || '0000-00-00';
+                    return bStart.localeCompare(aStart);
+                })
+                .forEach((row, index) => {
+                    row.querySelector('.luna-tree-row-label').innerText = getLunaTreeHistoryLabel(index);
+                    container.appendChild(row);
+                });
+        }
+
+        function renderLunaTreeRows() {
+            const container = document.getElementById('lunaTreeMonthList');
+            container.dataset.rendered = 'true';
             container.innerHTML = '';
-            for (let index = 0; index < 12; index += 1) {
-                const month = lunaTreeMonthKey(year, index);
-                const entry = byMonth.get(month);
-                const row = document.createElement('div');
-                row.className = 'luna-tree-row';
-                row.dataset.month = month;
-                row.dataset.eventId = entry ? getLunaTreeEventId(entry.event) : '';
-                const autoPlan = autoPlans.get(month);
-                const isPlannedEntry = entry?.meta?.planned;
-                const startDate = autoPlan && (!entry || isPlannedEntry) ? autoPlan.start : (entry ? entry.start : '');
-                const endDate = entry && !isPlannedEntry ? entry.meta.endDate : '';
-                row.dataset.autoPlanned = autoPlan && (!entry || isPlannedEntry) ? 'true' : 'false';
-                const periodText = startDate && endDate ? `${getLunaTreePeriodLength(startDate, endDate)}日間` : (startDate ? '予定' : '-');
-                row.innerHTML = `
-                    <div class="luna-tree-row-label">${index + 1}月</div>
-                    <label class="luna-tree-field luna-tree-start-field">
-                        <span class="luna-tree-field-label">開始日</span>
-                        <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onchange="updateLunaTreeRowPeriod(this)">
-                    </label>
-                    <label class="luna-tree-field luna-tree-end-field">
-                        <span class="luna-tree-field-label">終了日</span>
-                        <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onchange="updateLunaTreeRowPeriod(this)">
-                    </label>
-                    <div class="luna-tree-period">${periodText}</div>
-                    <button type="button" class="luna-tree-clear" title="クリア" aria-label="${index + 1}月をクリア" onclick="clearLunaTreeRow(this)">×</button>
-                `;
-                container.appendChild(row);
+            getLunaTreeActualEntriesFromEvents()
+                .sort((a, b) => b.start.localeCompare(a.start))
+                .forEach(entry => container.appendChild(createLunaTreeRow(entry)));
+            if (!container.querySelector('.luna-tree-row')) {
+                container.innerHTML = '<div class="luna-tree-muted" style="padding: 8px 2px;">登録済みの実績はありません。</div>';
             }
+            refreshLunaTreeRowLabels();
         }
 
         function renderLunaTreePage() {
-            const year = getLunaTreeYear();
             syncLunaTreeControlsFromEvents();
-            renderLunaTreeRows(year);
+            renderLunaTreeRows();
             refreshLunaTreeAutoPlansFromRows();
         }
 
         function loadLunaTreePage() {
             const alertDiv = document.getElementById('lunaTreeAlert');
             alertDiv.innerText = '';
-            const year = getLunaTreeYear();
-            Promise.all([loadLabels(), loadLunaTreeEvents(year)])
+            Promise.all([loadLabels(), loadLunaTreeEvents()])
                 .then(renderLunaTreePage)
                 .catch(error => {
                     console.error(error);
@@ -2122,39 +2119,23 @@
 
         function clearLunaTreeRow(button) {
             const row = button.closest('.luna-tree-row');
-            row.querySelector('.luna-tree-start').value = '';
-            row.querySelector('.luna-tree-end').value = '';
-            updateLunaTreeRowPeriod(row);
+            row.remove();
+            refreshLunaTreeAutoPlansFromRows();
         }
 
         function setLunaTreeRowPeriodText(row) {
             const start = row.querySelector('.luna-tree-start').value;
             const end = row.querySelector('.luna-tree-end').value;
-            row.querySelector('.luna-tree-period').innerText = start && end ? `${getLunaTreePeriodLength(start, end)}日間` : (start ? '予定' : '-');
+            row.querySelector('.luna-tree-period').innerText = start && end ? `${getLunaTreePeriodLength(start, end)}日間` : '-';
         }
 
         function refreshLunaTreeAutoPlansFromRows() {
-            const year = getLunaTreeYear();
             const actualEntries = getLunaTreeWorkingActualEntries();
-            const autoPlans = getLunaTreeAutoPlanMap(actualEntries);
             Array.from(document.querySelectorAll('.luna-tree-row')).forEach(row => {
-                const endInput = row.querySelector('.luna-tree-end');
-                const startInput = row.querySelector('.luna-tree-start');
-                const plan = autoPlans.get(row.dataset.month);
-                if (!endInput.value) {
-                    if (plan) {
-                        startInput.value = plan.start;
-                        row.dataset.autoPlanned = 'true';
-                    } else if (row.dataset.autoPlanned === 'true') {
-                        startInput.value = '';
-                        row.dataset.autoPlanned = 'false';
-                    }
-                } else {
-                    row.dataset.autoPlanned = 'false';
-                }
                 setLunaTreeRowPeriodText(row);
             });
-            renderLunaTreeStats(year, actualEntries);
+            refreshLunaTreeRowLabels();
+            renderLunaTreeStats(actualEntries);
         }
 
         function updateLunaTreeRowPeriod(source) {
@@ -2163,81 +2144,116 @@
             refreshLunaTreeAutoPlansFromRows();
         }
 
+        function addLunaTreeRow() {
+            const container = document.getElementById('lunaTreeMonthList');
+            const empty = container.querySelector('.luna-tree-muted');
+            if (empty && !container.querySelector('.luna-tree-row')) container.innerHTML = '';
+            container.prepend(createLunaTreeRow({
+                start: toDateParam(new Date()),
+                meta: { endDate: '', periodLength: 0, planned: false }
+            }));
+            refreshLunaTreeAutoPlansFromRows();
+        }
+
         async function saveLunaTree() {
             const alertDiv = document.getElementById('lunaTreeAlert');
             alertDiv.innerText = '';
-            const year = getLunaTreeYear();
             const isShared = document.querySelector('input[name="lunaTreeScope"]:checked')?.value !== 'private';
             const labelId = document.getElementById('lunaTreeLabelId').value || null;
             const rows = Array.from(document.querySelectorAll('.luna-tree-row'));
-            const existingByMonth = new Map();
-
-            getOwnedLunaTreeEvents().forEach(event => {
-                const meta = parseLunaTreeMeta(event);
-                const month = meta?.month || String(event.start || '').slice(0, 7);
-                if (month.slice(0, 4) !== String(year)) return;
-                if (!existingByMonth.has(month)) existingByMonth.set(month, []);
-                existingByMonth.get(month).push(event);
-            });
+            const existingActuals = getLunaTreeActualEntriesFromEvents();
+            const existingActualIds = new Set(existingActuals.map(item => String(getLunaTreeEventId(item.event))));
+            const keptActualIds = new Set();
+            const existingPlans = getOwnedLunaTreeEvents()
+                .map(event => ({ event, meta: parseLunaTreeMeta(event), start: String(event.start || '').split('T')[0] }))
+                .filter(item => item.meta?.planned);
 
             const requests = [];
+            const actualEntriesForPlans = [];
             for (const row of rows) {
-                const month = row.dataset.month;
                 const start = row.querySelector('.luna-tree-start').value;
                 const endDate = row.querySelector('.luna-tree-end').value;
-                const existing = existingByMonth.get(month) || [];
+                const eventId = row.dataset.eventId || '';
 
                 if (!start && endDate) {
-                    alertDiv.innerText = `${Number(month.slice(5, 7))}月は開始日を入力してください。`;
-                    return;
-                }
-
-                if (start && (start.slice(0, 7) !== month || (endDate && endDate.slice(0, 7) !== month))) {
-                    alertDiv.innerText = `${Number(month.slice(5, 7))}月の開始日と終了日は同じ月の日付を選んでください。`;
-                    return;
-                }
-
-                if (start && endDate && endDate < start) {
-                    alertDiv.innerText = `${Number(month.slice(5, 7))}月の終了日は開始日以降にしてください。`;
+                    alertDiv.innerText = '開始日を入力してください。';
                     return;
                 }
 
                 if (!start) {
-                    existing.forEach(event => {
-                        requests.push(fetch(`/api/events/${getLunaTreeEventId(event)}`, { method: 'DELETE' }));
-                    });
+                    if (eventId) {
+                        requests.push(fetch(`/api/events/${eventId}`, { method: 'DELETE' }));
+                        keptActualIds.add(String(eventId));
+                    }
                     continue;
                 }
 
+                if (start && endDate && endDate < start) {
+                    alertDiv.innerText = '終了日は開始日以降にしてください。';
+                    return;
+                }
+
                 const periodLength = endDate ? getLunaTreePeriodLength(start, endDate) : 0;
+                const month = start.slice(0, 7);
                 const payload = {
                     title: LUNA_TREE_TITLE,
                     start,
-                    end: addDaysToDateStr(start, 1),
-                    memo: lunaTreeMemo(month, endDate, periodLength),
+                    end: endDate ? addDaysToDateStr(endDate, 1) : addDaysToDateStr(start, 1),
+                    memo: lunaTreeMemo(month, endDate, periodLength, false),
                     allDay: true,
                     is_all_day: true,
                     label_id: labelId,
                     is_shared: isShared,
                     recurrence: ''
                 };
-                const primary = existing[0];
-                const url = primary ? `/api/events/${getLunaTreeEventId(primary)}` : '/api/events';
+                const url = eventId ? `/api/events/${eventId}` : '/api/events';
                 requests.push(fetch(url, {
-                    method: primary ? 'PUT' : 'POST',
+                    method: eventId ? 'PUT' : 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 }));
-                existing.slice(1).forEach(event => {
-                    requests.push(fetch(`/api/events/${getLunaTreeEventId(event)}`, { method: 'DELETE' }));
+                if (eventId) keptActualIds.add(String(eventId));
+                actualEntriesForPlans.push({
+                    event: null,
+                    meta: { month, endDate, periodLength, planned: false },
+                    start
                 });
             }
+
+            existingActualIds.forEach(id => {
+                if (!keptActualIds.has(id)) {
+                    requests.push(fetch(`/api/events/${id}`, { method: 'DELETE' }));
+                }
+            });
+
+            existingPlans.forEach(item => {
+                requests.push(fetch(`/api/events/${getLunaTreeEventId(item.event)}`, { method: 'DELETE' }));
+            });
+
+            getLunaTreeAutoPlans(actualEntriesForPlans.sort((a, b) => a.start.localeCompare(b.start))).forEach(plan => {
+                const payload = {
+                    title: LUNA_TREE_TITLE,
+                    start: plan.start,
+                    end: addDaysToDateStr(plan.start, 1),
+                    memo: lunaTreeMemo(plan.month, '', 0, true),
+                    allDay: true,
+                    is_all_day: true,
+                    label_id: labelId,
+                    is_shared: isShared,
+                    recurrence: ''
+                };
+                requests.push(fetch('/api/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }));
+            });
 
             try {
                 const responses = await Promise.all(requests);
                 if (responses.some(response => !response.ok)) throw new Error('save failed');
                 await refreshEvents();
-                await loadLunaTreeEvents(year);
+                await loadLunaTreeEvents();
                 renderLunaTreePage();
                 if (document.getElementById('daySheet').classList.contains('open') && selectedDateStr) {
                     openDaySheet(selectedDateStr);
