@@ -1095,7 +1095,7 @@
             <div class="modal-btns">
                 <button class="btn" style="background-color:#8f1f2d; color:white; display:none; margin-right:auto;" id="btnDeleteModal" onclick="deleteEventFromModal()">削除</button>
                 <button class="btn btn-secondary" onclick="closeRegisterModal()">キャンセル</button>
-                <button class="btn btn-primary" onclick="saveEvent()">保存</button>
+                <button class="btn btn-primary" id="btnSaveEventModal" onclick="saveEvent()">保存</button>
             </div>
         </div>
 
@@ -1113,6 +1113,7 @@
     <script>
         let calendar;
         let allEvents = [];
+        let isSavingEvent = false;
         let cachedLabels = [];
         let cachedHolidays = []; // 祝日データを一時保持するキャッシュ配列を追加
         let isAnimating = false;
@@ -2427,7 +2428,17 @@
         }
         function closeAllModals() { closeDaySheet(); closeRegisterModal(); closeEventDragActionModal(false); }
 
+        function setEventSaveBusy(isBusy) {
+            isSavingEvent = isBusy;
+            const saveButton = document.getElementById('btnSaveEventModal');
+            if (saveButton) {
+                saveButton.disabled = isBusy;
+            }
+        }
+
         function saveEvent() {
+            if (isSavingEvent) return;
+
             const titleVal = document.getElementById('eventTitle').value.trim();
 
             if (!titleVal) {
@@ -2485,6 +2496,8 @@
                 ? 'PUT'
                 : 'POST';
 
+            setEventSaveBusy(true);
+
             fetch(url, {
                 method,
                 headers: {
@@ -2513,6 +2526,9 @@
             .catch(err => {
                 console.error(err);
                 alert('通信エラーが発生しました。');
+            })
+            .finally(() => {
+                setEventSaveBusy(false);
             });
         }
 

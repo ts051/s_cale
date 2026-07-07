@@ -7,9 +7,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="WhiteTree">
-    <link rel="manifest" href="static/manifest.webmanifest?v=pwa-start-1">
-    <link rel="icon" type="image/png" sizes="192x192" href="static/icons/icon-192.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="static/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/s_cale/static/manifest.webmanifest?v=icons-20260707">
+    <link rel="icon" type="image/png" sizes="192x192" href="/s_cale/static/icons/whitetree-icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/s_cale/static/icons/whitetree-apple-touch-icon.png">
     <title>WhiteTree</title>
     <script src="static/fullcalendar-6.1.18.min.js?v=fc-local-1"></script>
     <style>
@@ -694,11 +694,54 @@
             box-sizing: border-box;
             box-shadow: 0 1px 3px rgba(60, 64, 67, 0.08);
         }
+        .luna-tree-display-panel {
+            margin-top: 0;
+        }
+        .luna-tree-display-title {
+            margin-bottom: 10px;
+        }
+        .luna-tree-display-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+        .luna-tree-scope-options {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex: 0 0 auto;
+        }
+        .luna-tree-radio-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .luna-tree-radio-label input {
+            margin: 0;
+            transform: scale(1.1);
+        }
+        .luna-tree-label-control {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: center;
+            gap: 6px;
+            flex: 1 1 0;
+            max-width: 210px;
+            min-width: 0;
+        }
+        #lunaTreeAlert:empty {
+            min-height: 0;
+            margin-bottom: 6px;
+        }
         .luna-tree-toolbar {
             display: flex;
             align-items: center;
             gap: 8px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             margin-bottom: 12px;
         }
         .luna-tree-input, .luna-tree-select {
@@ -713,7 +756,16 @@
             max-width: 100%;
             min-width: 0;
         }
-        .luna-tree-year { width: 104px; }
+        .luna-tree-year {
+            flex: 0 1 210px;
+            width: 210px;
+            padding-left: 12px;
+        }
+        .luna-tree-toolbar .btn {
+            flex: 0 0 auto;
+            padding: 9px 10px;
+            white-space: nowrap;
+        }
         .luna-tree-stats {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -722,53 +774,50 @@
             border-radius: 8px;
             background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
             padding: 10px;
+            margin-bottom: 18px;
+        }
+        .luna-tree-stats > div {
+            min-width: 0;
+            text-align: center;
         }
         .luna-tree-stat-value {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             color: #3c4043;
+            line-height: 1.2;
         }
         .luna-tree-stat-label, .luna-tree-muted {
             font-size: 12px;
             color: #70757a;
         }
+        .luna-tree-stat-label {
+            overflow-wrap: anywhere;
+        }
         .luna-tree-row {
             display: grid;
-            grid-template-columns: 40px minmax(0, 1fr) 34px;
-            grid-template-areas:
-                "month fields fields"
-                "month period clear";
-            gap: 10px;
+            grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr) 46px 30px;
+            gap: 6px;
             align-items: center;
             border: 1px solid #eef0f2;
             border-radius: 8px;
-            padding: 10px;
+            padding: 8px;
             margin-bottom: 8px;
             background: #fbfbfc;
             box-sizing: border-box;
             box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
         }
         .luna-tree-row-label {
-            grid-area: month;
             color: #5f6368;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             line-height: 1;
+            white-space: nowrap;
         }
         .luna-tree-field {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
             min-width: 0;
-        }
-        .luna-tree-field-grid {
-            grid-area: fields;
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-            width: 100%;
-            min-width: 0;
-            max-width: none;
         }
         .luna-tree-field-label {
             font-size: 11px;
@@ -776,27 +825,26 @@
             line-height: 1;
         }
         .luna-tree-period {
-            grid-area: period;
-            justify-self: start;
+            justify-self: stretch;
             display: inline-flex;
             align-items: center;
-            min-height: 28px;
-            padding: 4px 10px;
-            border-radius: 999px;
+            justify-content: center;
+            min-height: 34px;
+            padding: 4px;
+            border-radius: 8px;
             background: #f1f3f4;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #5f6368;
             white-space: nowrap;
         }
         .luna-tree-clear {
-            grid-area: clear;
             justify-self: end;
             align-self: center;
-            width: 34px;
+            width: 30px;
             height: 34px;
             border: 1px solid #dadce0;
-            border-radius: 999px;
+            border-radius: 8px;
             background: #ffffff;
             color: #5f6368;
             cursor: pointer;
@@ -806,32 +854,128 @@
             box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1);
         }
         @media (max-width: 560px) {
-            .luna-tree-stats {
-                grid-template-columns: 1fr;
+            #lunaTreeSection.settings-container {
+                background-color: #ffffff;
+                padding-left: 0;
+                padding-right: 0;
+                padding-top: calc(20px + env(safe-area-inset-top));
+            }
+            .luna-tree-page {
+                max-width: 100%;
+            }
+            .luna-tree-card {
+                width: 100%;
+                max-width: 100%;
+                padding: 10px 14px;
+                box-shadow: none;
+            }
+            .luna-tree-card h2 {
+                margin-bottom: 10px;
+            }
+            .luna-tree-panel {
+                padding: 8px 6px;
+            }
+            .luna-tree-display-panel {
+                margin-bottom: 14px;
+            }
+            .luna-tree-display-title {
+                margin-bottom: 8px;
+            }
+            .luna-tree-display-row {
+                gap: 7px;
+            }
+            .luna-tree-scope-options {
+                gap: 8px;
+            }
+            .luna-tree-radio-label {
+                font-size: 13px;
+            }
+            .luna-tree-label-control {
+                grid-template-columns: auto minmax(0, 1fr);
+                gap: 4px;
+                max-width: 170px;
+            }
+            .luna-tree-label-control .luna-tree-select {
+                height: 34px;
+                padding: 7px 8px;
+                font-size: 13px;
+            }
+            .luna-tree-toolbar {
+                gap: 6px;
+                margin-bottom: 14px;
             }
             .luna-tree-row {
-                grid-template-columns: 42px minmax(0, 1fr) 36px;
-                grid-template-areas:
-                    "month fields fields"
-                    "month period clear";
-                gap: 9px;
-                padding: 12px;
+                grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1fr) 42px 26px;
+                gap: 3px;
+                padding: 6px 8px;
             }
             .luna-tree-input {
                 min-width: 0;
                 width: 100%;
-                font-size: 13px;
-                padding: 8px 6px;
+                min-height: 32px;
+                font-size: 12px;
+                padding: 7px 4px;
                 -webkit-appearance: none;
                 appearance: none;
             }
-            .luna-tree-row-label {
-                line-height: 1;
+            .luna-tree-start::-webkit-calendar-picker-indicator,
+            .luna-tree-end::-webkit-calendar-picker-indicator {
+                width: 14px;
+                height: 14px;
+                margin: 0;
+                padding: 0;
             }
-            .luna-tree-field-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 8px;
-                max-width: none;
+            .luna-tree-year {
+                flex: 0 1 170px;
+                width: 170px;
+                min-width: 0;
+                height: 34px;
+                padding-left: 10px;
+                font-size: 13px;
+            }
+            .luna-tree-toolbar .btn {
+                height: 34px;
+                padding: 7px 8px;
+                font-size: 13px;
+            }
+            .luna-tree-stats {
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 6px;
+                padding: 8px 6px;
+                margin-bottom: 18px;
+            }
+            .luna-tree-stat-value {
+                font-size: 15px;
+            }
+            .luna-tree-stat-label {
+                font-size: 10px;
+                line-height: 1.25;
+            }
+            .luna-tree-row-label {
+                font-size: 13px;
+            }
+            .luna-tree-field-label {
+                font-size: 10px;
+                padding-left: 4px;
+            }
+            .luna-tree-start,
+            .luna-tree-end {
+                font-size: 11px;
+                padding-left: 3px;
+                padding-right: 2px;
+            }
+            .luna-tree-period {
+                min-height: 32px;
+                font-size: 12px;
+                padding: 3px 2px;
+            }
+            .luna-tree-clear {
+                width: 24px;
+                height: 32px;
+                font-size: 16px;
             }
         }
 
@@ -1161,8 +1305,21 @@
                 <h2>LunaTree</h2>
                 <div class="alert-text" id="lunaTreeAlert"></div>
 
+                <div class="luna-tree-panel luna-tree-display-panel">
+                    <div class="luna-tree-muted luna-tree-display-title">カレンダー表示設定</div>
+                    <div class="luna-tree-display-row">
+                        <div class="luna-tree-scope-options">
+                            <label class="luna-tree-radio-label"><input type="radio" name="lunaTreeScope" value="shared" checked onchange="handleLunaTreeScopeChange()"> 共有</label>
+                            <label class="luna-tree-radio-label"><input type="radio" name="lunaTreeScope" value="private" onchange="handleLunaTreeScopeChange()"> 個人</label>
+                        </div>
+                        <label class="luna-tree-label-control" for="lunaTreeLabelId">
+                            <span class="luna-tree-muted">ラベル</span>
+                            <select id="lunaTreeLabelId" class="luna-tree-select"></select>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="luna-tree-toolbar">
-                    <label class="luna-tree-muted" for="lunaTreeYear">入力する年</label>
                     <input type="number" id="lunaTreeYear" class="luna-tree-input luna-tree-year" min="1900" max="2100" step="1" onchange="handleLunaTreeYearChange()">
                     <button type="button" class="btn btn-secondary" onclick="shiftLunaTreeYear(-1)">前年</button>
                     <button type="button" class="btn btn-secondary" onclick="shiftLunaTreeYear(1)">翌年</button>
@@ -1171,26 +1328,16 @@
                 <div class="luna-tree-stats" id="lunaTreeStats">
                     <div>
                         <div class="luna-tree-stat-value" id="lunaTreeElapsed">-</div>
-                        <div class="luna-tree-stat-label">前回開始日から</div>
+                        <div class="luna-tree-stat-label">前回開始日からの経過日数</div>
                     </div>
                     <div>
                         <div class="luna-tree-stat-value" id="lunaTreeAverageCycle">-</div>
-                        <div class="luna-tree-stat-label">年間の平均周期</div>
+                        <div class="luna-tree-stat-label">年平均周期</div>
                     </div>
                     <div>
                         <div class="luna-tree-stat-value" id="lunaTreeAveragePeriod">-</div>
-                        <div class="luna-tree-stat-label">年間の平均生理期間</div>
+                        <div class="luna-tree-stat-label">年平均生理期間</div>
                     </div>
-                </div>
-
-                <div class="luna-tree-panel" style="margin-top: 14px;">
-                    <div class="luna-tree-muted" style="margin-bottom: 10px;">カレンダー表示設定</div>
-                    <div class="drawer-row" style="gap: 16px; margin-bottom: 10px;">
-                        <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="lunaTreeScope" value="shared" checked onchange="handleLunaTreeScopeChange()" style="transform: scale(1.1); margin-right: 4px;"> 共有</label>
-                        <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="lunaTreeScope" value="private" onchange="handleLunaTreeScopeChange()" style="transform: scale(1.1); margin-right: 4px;"> 個人</label>
-                    </div>
-                    <label class="luna-tree-muted" for="lunaTreeLabelId">ラベル</label>
-                    <select id="lunaTreeLabelId" class="luna-tree-select" style="width: 100%; margin-top: 5px;"></select>
                 </div>
 
                 <div class="luna-tree-panel">
@@ -1214,7 +1361,7 @@
         <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer(false)"></div>
         <div class="drawer" id="drawer">
             <div class="drawer-header">
-                <img class="drawer-app-mark" src="static/icons/icon-192.png" alt="">
+                <img class="drawer-app-mark" src="/s_cale/static/icons/whitetree-icon-192.png" alt="">
                 <div>
                     <div class="drawer-app-name">WhiteTree</div>
                     <div id="drawerUserInfo" class="drawer-user">ユーザー</div>
@@ -1336,7 +1483,7 @@
             <div class="modal-btns">
                 <button class="btn" style="background-color:#8f1f2d; color:white; display:none; margin-right:auto;" id="btnDeleteModal" onclick="deleteEventFromModal()">削除</button>
                 <button class="btn btn-secondary" onclick="closeRegisterModal()">キャンセル</button>
-                <button class="btn btn-primary" onclick="saveEvent()">保存</button>
+                <button class="btn btn-primary" id="btnSaveEventModal" onclick="saveEvent()">保存</button>
             </div>
         </div>
 
@@ -1357,6 +1504,7 @@
     <script>
         let calendar;
         let allEvents = [];
+        let isSavingEvent = false;
         let cachedLabels = [];
         let cachedHolidays = []; // 祝日データを一時保持するキャッシュ配列を追加
         let isAnimating = false;
@@ -1857,18 +2005,16 @@
                 const periodText = startDate && endDate ? `${getLunaTreePeriodLength(startDate, endDate)}日間` : (startDate ? '予定' : '-');
                 row.innerHTML = `
                     <div class="luna-tree-row-label">${index + 1}月</div>
-                    <button type="button" class="luna-tree-clear" title="クリア" aria-label="${index + 1}月をクリア" onclick="clearLunaTreeRow(this)">×</button>
-                    <div class="luna-tree-field-grid">
-                        <label class="luna-tree-field luna-tree-start-field">
-                            <span class="luna-tree-field-label">開始</span>
-                            <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onchange="updateLunaTreeRowPeriod(this)">
-                        </label>
-                        <label class="luna-tree-field luna-tree-end-field">
-                            <span class="luna-tree-field-label">終了</span>
-                            <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onchange="updateLunaTreeRowPeriod(this)">
-                        </label>
-                    </div>
+                    <label class="luna-tree-field luna-tree-start-field">
+                        <span class="luna-tree-field-label">開始日</span>
+                        <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onchange="updateLunaTreeRowPeriod(this)">
+                    </label>
+                    <label class="luna-tree-field luna-tree-end-field">
+                        <span class="luna-tree-field-label">終了日</span>
+                        <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onchange="updateLunaTreeRowPeriod(this)">
+                    </label>
                     <div class="luna-tree-period">${periodText}</div>
+                    <button type="button" class="luna-tree-clear" title="クリア" aria-label="${index + 1}月をクリア" onclick="clearLunaTreeRow(this)">×</button>
                 `;
                 container.appendChild(row);
             }
@@ -3023,7 +3169,17 @@
         }
         function closeAllModals() { closeDaySheet(); closeRegisterModal(); closeEventDragActionModal(false); }
 
+        function setEventSaveBusy(isBusy) {
+            isSavingEvent = isBusy;
+            const saveButton = document.getElementById('btnSaveEventModal');
+            if (saveButton) {
+                saveButton.disabled = isBusy;
+            }
+        }
+
         function saveEvent() {
+            if (isSavingEvent) return;
+
             const titleVal = document.getElementById('eventTitle').value.trim();
 
             if (!titleVal) {
@@ -3081,6 +3237,8 @@
                 ? 'PUT'
                 : 'POST';
 
+            setEventSaveBusy(true);
+
             fetch(url, {
                 method,
                 headers: {
@@ -3109,6 +3267,9 @@
             .catch(err => {
                 console.error(err);
                 alert('通信エラーが発生しました。');
+            })
+            .finally(() => {
+                setEventSaveBusy(false);
             });
         }
 
