@@ -2961,23 +2961,21 @@
                     if (arg.event.allDay) classes.push('fc-event-forced-all-day');
                     return classes;
                 },
-                eventContent: function(arg) {
-                    const eventData = {
-                        title: arg.event.title,
-                        start: arg.event.startStr,
-                        end: arg.event.endStr,
-                        extendedProps: arg.event.extendedProps
-                    };
-                    if (!isLunaTreeEvent(eventData)) return undefined;
-                    const meta = parseLunaTreeMeta(eventData);
-                    if (!meta?.planned) return undefined;
-                    const titleEl = document.createElement('div');
-                    titleEl.className = 'fc-event-title fc-sticky';
-                    titleEl.textContent = `${LUNA_TREE_TITLE} 予定`;
-                    return { domNodes: [titleEl] };
-                },
 
                 eventDidMount: function(info) {
+                    const eventData = {
+                        title: info.event.title,
+                        start: info.event.startStr,
+                        end: info.event.endStr,
+                        extendedProps: info.event.extendedProps
+                    };
+                    if (isLunaTreeEvent(eventData)) {
+                        const meta = parseLunaTreeMeta(eventData);
+                        if (meta?.planned) {
+                            const titleEl = info.el.querySelector('.fc-event-title');
+                            if (titleEl) titleEl.textContent = `${LUNA_TREE_TITLE} 予定`;
+                        }
+                    }
                     if (!info.event.allDay && !info.event.extendedProps.is_holiday) {
                         const baseColor = info.event.backgroundColor || '#7a94a6';
                         info.el.style.setProperty('--fc-event-bg-alpha-color', hexToRgba(baseColor, 0.15));
