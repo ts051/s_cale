@@ -173,13 +173,12 @@
         body.dark-mode .luna-tree-stat-value {
             color: #e8eaed;
         }
-        body.dark-mode .luna-tree-clear {
+        body.dark-mode .luna-tree-delete {
             background: #2d2d2d;
             border-color: #3c4043;
             color: #e8eaed;
         }
         body.dark-mode .luna-tree-period {
-            background: #2d2d2d;
             color: #e8eaed;
         }
 
@@ -262,6 +261,7 @@
         .btn-block:hover { background-color: #245b3a; }
         
         .settings-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .label-page-actions { margin-top: -6px; margin-bottom: 14px; }
         .btn-cancel { background-color: #6c757d; text-align: center; text-decoration: none; color: white; padding: 10px; border-radius: 4px; flex: 1; font-size: 16px; border: none; cursor: pointer; }
         .btn-cancel:hover { background-color: #5a6268; }
         .btn-save { flex: 1; padding: 10px; }
@@ -821,7 +821,7 @@
         }
         .luna-tree-row {
             display: grid;
-            grid-template-columns: 50px minmax(0, 1fr) minmax(0, 1fr) 46px 30px;
+            grid-template-columns: 50px minmax(0, 1fr) auto minmax(0, 1fr) 46px 52px;
             gap: 6px;
             align-items: center;
             border: 1px solid #eef0f2;
@@ -845,6 +845,13 @@
             gap: 3px;
             min-width: 0;
         }
+        .luna-tree-date-separator {
+            color: #5f6368;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1;
+            text-align: center;
+        }
         .luna-tree-field-label {
             font-size: 11px;
             color: #70757a;
@@ -858,26 +865,23 @@
             min-height: 34px;
             padding: 4px;
             border-radius: 8px;
-            background: #f1f3f4;
             font-size: 12px;
             font-weight: 600;
             color: #5f6368;
             white-space: nowrap;
         }
-        .luna-tree-clear {
+        .luna-tree-delete {
             justify-self: end;
             align-self: center;
-            width: 30px;
+            width: 52px;
             height: 34px;
-            border: 1px solid #dadce0;
-            border-radius: 8px;
-            background: #ffffff;
-            color: #5f6368;
+            border: none;
+            border-radius: 4px;
+            background: #8f1f2d;
+            color: #ffffff;
             cursor: pointer;
-            line-height: 1;
-            padding: 0;
-            font-size: 18px;
-            box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1);
+            padding: 4px 8px;
+            font-size: 12px;
         }
         @media (max-width: 560px) {
             #lunaTreeSection.settings-container {
@@ -942,7 +946,7 @@
                 font-size: 13px;
             }
             .luna-tree-row {
-                grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr) 42px 26px;
+                grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 42px 46px;
                 gap: 3px;
                 padding: 6px 8px;
             }
@@ -998,6 +1002,9 @@
                 font-size: 10px;
                 padding-left: 4px;
             }
+            .luna-tree-date-separator {
+                font-size: 14px;
+            }
             .luna-tree-start,
             .luna-tree-end {
                 font-size: 11px;
@@ -1009,10 +1016,11 @@
                 font-size: 12px;
                 padding: 3px 2px;
             }
-            .luna-tree-clear {
-                width: 24px;
+            .luna-tree-delete {
+                width: 46px;
                 height: 32px;
-                font-size: 16px;
+                font-size: 11px;
+                padding: 3px 6px;
             }
         }
 
@@ -1302,7 +1310,7 @@
                     <div class="help-text">変更しない場合は空欄のままにしてください。</div>
                 </div>
                 <div class="settings-btns">
-                    <button type="button" class="btn-cancel" onclick="showSection('calendar')">キャンセル</button>
+                    <button type="button" class="btn-cancel" onclick="showSection('calendar')">戻る</button>
                     <button type="submit" class="btn-block btn-save">保存</button>
                 </div>
             </form>
@@ -1312,27 +1320,12 @@
     <div id="labelSection" class="spa-section settings-container">
         <div class="spa-card-wide settings-page-card">
             <h2>ラベル設定</h2>
-            
-            <div style="border: 1px solid #dadce0; padding: 12px; border-radius: 6px; margin-bottom: 20px; background-color: #fafafa; box-sizing: border-box;">
-                <h3 style="font-size: 14px; margin-top: 0; color: #3c4043;">新規ラベル作成</h3>
-                <input type="text" id="newLabelName" placeholder="ラベル名" class="drawer-input" style="width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 10px; font-size: 14px; border: 1px solid #dadce0; border-radius: 4px;">
-                <div class="drawer-row" style="margin-bottom: 12px;">
-                    <label style="font-weight: bold; font-size: 14px;">カラー：</label>
-                    <input type="color" id="newLabelColor" value="#7a94a6" style="width:24px; height:24px; border:none; padding:0; background:none; cursor:pointer; border-radius:50%; -webkit-appearance:none; appearance:none; flex-shrink:0;">
-                </div>
-                <div class="drawer-row" style="margin-bottom: 12px; gap: 16px;">
-                    <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="newLabelScope" value="shared" checked style="transform: scale(1.1); margin-right: 4px;"> 共有</label>
-                    <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="newLabelScope" value="private" style="transform: scale(1.1); margin-right: 4px;"> 個人</label>
-                </div>
-                <button class="btn btn-primary" onclick="addNewLabel()" style="width: 100%; padding: 8px; font-size: 14px;">ラベルを追加</button>
+            <div class="settings-btns label-page-actions">
+                <button type="button" class="btn-cancel" onclick="showSection('calendar')">戻る</button>
+                <button type="button" class="btn-block btn-save" onclick="saveAllLabels()">保存</button>
             </div>
-
-            <h3 style="font-size: 14px; color: #3c4043; margin-bottom: 8px;">登録済みラベルの管理</h3>
+            <div class="alert-text" id="labelAlert"></div>
             <div class="label-mgmt-list" id="labelMgmtList" style="margin-bottom: 20px;"></div>
-
-            <div class="settings-btns">
-                <button type="button" class="btn-cancel" onclick="showSection('calendar')" style="width: 100%;">カレンダーに戻る</button>
-            </div>
         </div>
     </div>
 
@@ -1343,7 +1336,6 @@
                 <div class="alert-text" id="lunaTreeAlert"></div>
 
                 <div class="luna-tree-panel luna-tree-display-panel">
-                    <div class="luna-tree-muted luna-tree-display-title">カレンダー表示設定</div>
                     <div class="luna-tree-display-row">
                         <label class="luna-tree-label-control" for="lunaTreeLabelId">
                             <span class="luna-tree-muted">ラベル</span>
@@ -2060,15 +2052,14 @@
             row.innerHTML = `
                 <div class="luna-tree-row-label"></div>
                 <label class="luna-tree-field luna-tree-start-field">
-                    <span class="luna-tree-field-label">開始日</span>
                     <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onfocus="handleLunaTreeDateFocus(this)" oninput="handleLunaTreeDateInput(this)" onchange="handleLunaTreeDateInput(this)" onblur="handleLunaTreeDateCommit(this)">
                 </label>
+                <div class="luna-tree-date-separator">〜</div>
                 <label class="luna-tree-field luna-tree-end-field">
-                    <span class="luna-tree-field-label">終了日</span>
                     <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onfocus="handleLunaTreeDateFocus(this)" oninput="handleLunaTreeDateInput(this)" onchange="handleLunaTreeDateInput(this)" onblur="handleLunaTreeDateCommit(this)">
                 </label>
                 <div class="luna-tree-period">${periodText}</div>
-                <button type="button" class="luna-tree-clear" title="削除" aria-label="削除" onclick="clearLunaTreeRow(this)">×</button>
+                <button type="button" class="luna-tree-delete" onclick="clearLunaTreeRow(this)">削除</button>
             `;
             return row;
         }
@@ -2810,7 +2801,6 @@
                     </div>
                     <input type="color" id="mgmtColor-${l.id}" value="${l.color}" style="width:24px; height:24px; border:none; padding:0; background:none; cursor:pointer; border-radius:50%; -webkit-appearance:none; appearance:none; flex-shrink:0;">
                     <input type="text" id="mgmtName-${l.id}" value="${l.name}">
-                    <button class="btn btn-primary" style="font-size:12px; padding:4px 8px; cursor:pointer;" onclick="updateLabel(${l.id})">保存</button>
                     <button class="btn" style="font-size:12px; padding:4px 8px; background-color:#8f1f2d; color:white; cursor:pointer;" onclick="deleteLabel(${l.id})">削除</button>
                 </div>
             `;
@@ -2921,6 +2911,51 @@
                     });
                 }
             });
+        }
+
+        function saveAllLabels() {
+            const alertDiv = document.getElementById('labelAlert');
+            let hasInvalidInput = false;
+            const updates = cachedLabels.map(label => {
+                const nameInput = document.getElementById(`mgmtName-${label.id}`);
+                const colorInput = document.getElementById(`mgmtColor-${label.id}`);
+                if (!nameInput || !colorInput) return null;
+
+                const name = nameInput.value.trim();
+                if (!name) {
+                    nameInput.focus();
+                    hasInvalidInput = true;
+                    return null;
+                }
+
+                return fetch(`/api/labels/${label.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, color: colorInput.value })
+                }).then(res => res.json()).then(data => {
+                    if (!data.success) throw new Error(data.error || 'ラベルを保存できませんでした');
+                });
+            }).filter(Boolean);
+
+            if (hasInvalidInput) {
+                if (alertDiv) alertDiv.innerText = '名前を入力してください。';
+                return;
+            }
+            if (updates.length === 0) return;
+            if (alertDiv) alertDiv.innerText = '保存中...';
+            Promise.all(updates)
+                .then(() => loadLabels())
+                .then(() => {
+                    filterModalLabels(document.getElementById('editingEventId').value !== '');
+                    renderLabelManagement();
+                    refreshEvents();
+                    if (alertDiv) alertDiv.innerText = '保存しました。';
+                })
+                .catch(err => {
+                    console.error(err);
+                    if (alertDiv) alertDiv.innerText = err.message || 'ラベルを保存できませんでした。';
+                    else alert(err.message || 'ラベルを保存できませんでした。');
+                });
         }
 
         function deleteLabel(id) {
