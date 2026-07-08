@@ -714,19 +714,6 @@
             gap: 14px;
             flex: 0 0 auto;
         }
-        .luna-tree-scope-fixed {
-            display: inline-flex;
-            align-items: center;
-            min-height: 34px;
-            padding: 0 10px;
-            border: 1px solid #dadce0;
-            border-radius: 8px;
-            background: #f8f9fa;
-            color: #3c4043;
-            font-size: 14px;
-            font-weight: 600;
-            white-space: nowrap;
-        }
         .luna-tree-radio-label {
             display: inline-flex;
             align-items: center;
@@ -795,6 +782,14 @@
             padding: 9px 8px;
             font-size: 14px;
             white-space: nowrap;
+        }
+        .luna-tree-new-btn {
+            background: #2f6f4e;
+            color: #ffffff;
+            border: none;
+        }
+        .luna-tree-new-btn:active {
+            background: #245b3a;
         }
         .luna-tree-stats {
             display: grid;
@@ -916,11 +911,6 @@
             }
             .luna-tree-scope-options {
                 gap: 8px;
-            }
-            .luna-tree-scope-fixed {
-                min-height: 34px;
-                padding: 0 8px;
-                font-size: 13px;
             }
             .luna-tree-radio-label {
                 font-size: 13px;
@@ -1354,7 +1344,6 @@
                 <div class="luna-tree-panel luna-tree-display-panel">
                     <div class="luna-tree-muted luna-tree-display-title">カレンダー表示設定</div>
                     <div class="luna-tree-display-row">
-                        <div class="luna-tree-scope-fixed">共有</div>
                         <label class="luna-tree-label-control" for="lunaTreeLabelId">
                             <span class="luna-tree-muted">ラベル</span>
                             <select id="lunaTreeLabelId" class="luna-tree-select" onchange="scheduleLunaTreeAutoSave()"></select>
@@ -1362,7 +1351,7 @@
                     </div>
                     <div class="luna-tree-action-row">
                         <button type="button" class="btn-cancel" onclick="showSection('calendar')">戻る</button>
-                        <button type="button" class="btn btn-secondary" onclick="addLunaTreeRow()">新規</button>
+                        <button type="button" class="btn luna-tree-new-btn" onclick="addLunaTreeRow()">新規</button>
                     </div>
                 </div>
 
@@ -2022,8 +2011,8 @@
 
         function populateLunaTreeLabelSelect(selectedLabelId) {
             const select = document.getElementById('lunaTreeLabelId');
-            const individualLabels = cachedLabels.filter(label => !label.is_shared);
-            const sourceLabels = individualLabels.length > 0 ? individualLabels : cachedLabels;
+            const sharedLabels = cachedLabels.filter(label => label.is_shared);
+            const sourceLabels = sharedLabels.length > 0 ? sharedLabels : cachedLabels;
             const labels = sourceLabels
                 .sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999) || a.id - b.id);
             select.innerHTML = '';
@@ -2071,11 +2060,11 @@
                 <div class="luna-tree-row-label"></div>
                 <label class="luna-tree-field luna-tree-start-field">
                     <span class="luna-tree-field-label">開始日</span>
-                    <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onchange="updateLunaTreeRowPeriod(this)">
+                    <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onfocus="pauseLunaTreeAutoSave()" onchange="handleLunaTreeDateInput(this)" onblur="handleLunaTreeDateCommit(this)">
                 </label>
                 <label class="luna-tree-field luna-tree-end-field">
                     <span class="luna-tree-field-label">終了日</span>
-                    <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onchange="updateLunaTreeRowPeriod(this)">
+                    <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onfocus="pauseLunaTreeAutoSave()" onchange="handleLunaTreeDateInput(this)" onblur="handleLunaTreeDateCommit(this)">
                 </label>
                 <div class="luna-tree-period">${periodText}</div>
                 <button type="button" class="luna-tree-clear" title="削除" aria-label="削除" onclick="clearLunaTreeRow(this)">×</button>
@@ -2157,19 +2146,32 @@
             const row = source.closest ? source.closest('.luna-tree-row') : source;
             setLunaTreeRowPeriodText(row);
             refreshLunaTreeAutoPlansFromRows();
-            scheduleLunaTreeAutoSave();
+        }
+
+        function handleLunaTreeDateInput(source) {
+            updateLunaTreeRowPeriod(source);
+        }
+
+        function handleLunaTreeDateCommit(source) {
+            updateLunaTreeRowPeriod(source);
+            scheduleLunaTreeAutoSave(900);
         }
 
         function addLunaTreeRow() {
             const container = document.getElementById('lunaTreeMonthList');
             const empty = container.querySelector('.luna-tree-muted');
             if (empty && !container.querySelector('.luna-tree-row')) container.innerHTML = '';
-            container.prepend(createLunaTreeRow({
+            const row = createLunaTreeRow({
                 start: toDateParam(new Date()),
                 meta: { endDate: '', periodLength: 0, planned: false }
-            }));
+            });
+            container.prepend(row);
             refreshLunaTreeAutoPlansFromRows();
-            scheduleLunaTreeAutoSave();
+            row.querySelector('.luna-tree-start').focus();
+        }
+
+        function pauseLunaTreeAutoSave() {
+            clearTimeout(lunaTreeAutoSaveTimer);
         }
 
         function scheduleLunaTreeAutoSave(delay = 700) {
