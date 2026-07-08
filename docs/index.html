@@ -2060,11 +2060,11 @@
                 <div class="luna-tree-row-label"></div>
                 <label class="luna-tree-field luna-tree-start-field">
                     <span class="luna-tree-field-label">開始日</span>
-                    <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onfocus="pauseLunaTreeAutoSave()" onchange="handleLunaTreeDateCommit(this)">
+                    <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onfocus="handleLunaTreeDateFocus(this)" onchange="handleLunaTreeDateCommit(this)">
                 </label>
                 <label class="luna-tree-field luna-tree-end-field">
                     <span class="luna-tree-field-label">終了日</span>
-                    <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onfocus="pauseLunaTreeAutoSave()" onchange="handleLunaTreeDateCommit(this)">
+                    <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onfocus="handleLunaTreeDateFocus(this)" onchange="handleLunaTreeDateCommit(this)">
                 </label>
                 <div class="luna-tree-period">${periodText}</div>
                 <button type="button" class="luna-tree-clear" title="削除" aria-label="削除" onclick="clearLunaTreeRow(this)">×</button>
@@ -2133,23 +2133,32 @@
             row.querySelector('.luna-tree-period').innerText = start && end ? `${getLunaTreePeriodLength(start, end)}日間` : '-';
         }
 
-        function refreshLunaTreeAutoPlansFromRows() {
+        function refreshLunaTreeAutoPlansFromRows(options = {}) {
+            const shouldSortRows = options.sortRows !== false;
             const actualEntries = getLunaTreeWorkingActualEntries();
             Array.from(document.querySelectorAll('.luna-tree-row')).forEach(row => {
                 setLunaTreeRowPeriodText(row);
             });
-            refreshLunaTreeRowLabels();
+            if (shouldSortRows) refreshLunaTreeRowLabels();
             renderLunaTreeStats(actualEntries);
         }
 
-        function updateLunaTreeRowPeriod(source) {
+        function updateLunaTreeRowPeriod(source, options = {}) {
             const row = source.closest ? source.closest('.luna-tree-row') : source;
             setLunaTreeRowPeriodText(row);
-            refreshLunaTreeAutoPlansFromRows();
+            refreshLunaTreeAutoPlansFromRows(options);
         }
 
         function handleLunaTreeDateCommit(source) {
-            updateLunaTreeRowPeriod(source);
+            const focusedAt = Number(source.dataset.focusedAt || 0);
+            const previousValue = source.dataset.previousValue || '';
+            const elapsed = focusedAt ? Date.now() - focusedAt : 9999;
+            if (!previousValue && source.value === toDateParam(new Date()) && elapsed < 600) {
+                source.value = '';
+                updateLunaTreeRowPeriod(source, { sortRows: false });
+                return;
+            }
+            updateLunaTreeRowPeriod(source, { sortRows: false });
             scheduleLunaTreeAutoSave(900);
         }
 
@@ -2163,11 +2172,12 @@
             });
             container.prepend(row);
             refreshLunaTreeAutoPlansFromRows();
-            row.querySelector('.luna-tree-start').focus();
         }
 
-        function pauseLunaTreeAutoSave() {
+        function handleLunaTreeDateFocus(source) {
             clearTimeout(lunaTreeAutoSaveTimer);
+            source.dataset.focusedAt = String(Date.now());
+            source.dataset.previousValue = source.value || '';
         }
 
         function syncLunaTreeRowEventIdsFromEvents() {
