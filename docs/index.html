@@ -666,6 +666,7 @@
             background-color: var(--fc-event-bg-solid-color, #d15b86) !important;
             border-color: var(--fc-event-bg-solid-color, #d15b86) !important;
             color: #ffffff !important;
+            font-size: 8.5px !important;
             font-weight: 700 !important;
         }
         body.dark-mode .fc-event-holiday {
@@ -2060,11 +2061,11 @@
                 <div class="luna-tree-row-label"></div>
                 <label class="luna-tree-field luna-tree-start-field">
                     <span class="luna-tree-field-label">開始日</span>
-                    <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onfocus="handleLunaTreeDateFocus(this)" onchange="handleLunaTreeDateCommit(this)">
+                    <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onfocus="handleLunaTreeDateFocus(this)" oninput="handleLunaTreeDateInput(this)" onchange="handleLunaTreeDateInput(this)" onblur="handleLunaTreeDateCommit(this)">
                 </label>
                 <label class="luna-tree-field luna-tree-end-field">
                     <span class="luna-tree-field-label">終了日</span>
-                    <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onfocus="handleLunaTreeDateFocus(this)" onchange="handleLunaTreeDateCommit(this)">
+                    <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onfocus="handleLunaTreeDateFocus(this)" oninput="handleLunaTreeDateInput(this)" onchange="handleLunaTreeDateInput(this)" onblur="handleLunaTreeDateCommit(this)">
                 </label>
                 <div class="luna-tree-period">${periodText}</div>
                 <button type="button" class="luna-tree-clear" title="削除" aria-label="削除" onclick="clearLunaTreeRow(this)">×</button>
@@ -2149,16 +2150,22 @@
             refreshLunaTreeAutoPlansFromRows(options);
         }
 
+        function handleLunaTreeDateInput(source) {
+            updateLunaTreeRowPeriod(source, { sortRows: false });
+        }
+
         function handleLunaTreeDateCommit(source) {
             const focusedAt = Number(source.dataset.focusedAt || 0);
             const previousValue = source.dataset.previousValue || '';
             const elapsed = focusedAt ? Date.now() - focusedAt : 9999;
+            if (source.value === previousValue) return;
             if (!previousValue && source.value === toDateParam(new Date()) && elapsed < 600) {
                 source.value = '';
                 updateLunaTreeRowPeriod(source, { sortRows: false });
                 return;
             }
             updateLunaTreeRowPeriod(source, { sortRows: false });
+            source.dataset.previousValue = source.value || '';
             scheduleLunaTreeAutoSave(900);
         }
 
