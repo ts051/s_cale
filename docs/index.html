@@ -2060,11 +2060,11 @@
                 <div class="luna-tree-row-label"></div>
                 <label class="luna-tree-field luna-tree-start-field">
                     <span class="luna-tree-field-label">開始日</span>
-                    <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onfocus="pauseLunaTreeAutoSave()" onchange="handleLunaTreeDateInput(this)" onblur="handleLunaTreeDateCommit(this)">
+                    <input type="date" class="luna-tree-input luna-tree-start" value="${startDate}" onfocus="pauseLunaTreeAutoSave()" onchange="handleLunaTreeDateCommit(this)">
                 </label>
                 <label class="luna-tree-field luna-tree-end-field">
                     <span class="luna-tree-field-label">終了日</span>
-                    <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onfocus="pauseLunaTreeAutoSave()" onchange="handleLunaTreeDateInput(this)" onblur="handleLunaTreeDateCommit(this)">
+                    <input type="date" class="luna-tree-input luna-tree-end" value="${endDate}" onfocus="pauseLunaTreeAutoSave()" onchange="handleLunaTreeDateCommit(this)">
                 </label>
                 <div class="luna-tree-period">${periodText}</div>
                 <button type="button" class="luna-tree-clear" title="削除" aria-label="削除" onclick="clearLunaTreeRow(this)">×</button>
@@ -2146,10 +2146,6 @@
             const row = source.closest ? source.closest('.luna-tree-row') : source;
             setLunaTreeRowPeriodText(row);
             refreshLunaTreeAutoPlansFromRows();
-        }
-
-        function handleLunaTreeDateInput(source) {
-            updateLunaTreeRowPeriod(source);
         }
 
         function handleLunaTreeDateCommit(source) {
