@@ -1866,7 +1866,12 @@
         }
 
         function isLunaTreeEvent(event) {
-            return event?.title === LUNA_TREE_TITLE && parseLunaTreeMeta(event) !== null;
+            return (event?.title === LUNA_TREE_TITLE || event?.title === `${LUNA_TREE_TITLE} 予定`) && parseLunaTreeMeta(event) !== null;
+        }
+
+        function getLunaTreeDisplayTitle(event) {
+            const meta = parseLunaTreeMeta(event);
+            return meta?.planned ? `${LUNA_TREE_TITLE} 予定` : LUNA_TREE_TITLE;
         }
 
         function getLunaTreeEventId(event) {
@@ -2441,9 +2446,74 @@
             });
         }
 
+        function getComparableEventId(event) {
+            const id = getLunaTreeEventId(event) || event?.id || '';
+            const numeric = Number(id);
+            return Number.isFinite(numeric) ? numeric : String(id);
+        }
+
+        function shouldReplaceCalendarEvent(existing, incoming) {
+            const existingId = getComparableEventId(existing);
+            const incomingId = getComparableEventId(incoming);
+            if (typeof existingId === 'number' && typeof incomingId === 'number') return incomingId > existingId;
+            return String(incomingId).localeCompare(String(existingId), 'ja', { numeric: true }) > 0;
+        }
+
+        function getLunaTreeDateDedupeKey(event) {
+            const props = event?.extendedProps || {};
+            const startDate = String(event?.start || '').split('T')[0];
+            const ownerKey = props.owner_id || props.user_id || (props.is_mine === true ? 'mine' : 'shared');
+            const scopeKey = props.is_shared === false ? 'private' : 'shared';
+            return `${ownerKey}:${scopeKey}:${props.label_id || ''}:${startDate}`;
+        }
+
+        function normalizeCalendarEvents(eventsData) {
+            const exactEvents = new Map();
+            (Array.isArray(eventsData) ? eventsData : []).forEach(event => {
+                const props = event?.extendedProps || {};
+                const exactKey = [
+                    getLunaTreeEventId(event) || event?.id || '',
+                    event?.title || '',
+                    event?.start || '',
+                    event?.end || '',
+                    props.memo || ''
+                ].join('|');
+                const existing = exactEvents.get(exactKey);
+                if (!existing || shouldReplaceCalendarEvent(existing, event)) exactEvents.set(exactKey, event);
+            });
+
+            const normalized = [];
+            const lunaTreeIndexByDate = new Map();
+            exactEvents.forEach(event => {
+                if (!isLunaTreeEvent(event)) {
+                    normalized.push(event);
+                    return;
+                }
+
+                const meta = parseLunaTreeMeta(event);
+                const dateKey = getLunaTreeDateDedupeKey(event);
+                const existingIndex = lunaTreeIndexByDate.get(dateKey);
+                if (existingIndex === undefined) {
+                    lunaTreeIndexByDate.set(dateKey, normalized.length);
+                    normalized.push(event);
+                    return;
+                }
+
+                const existing = normalized[existingIndex];
+                const existingMeta = parseLunaTreeMeta(existing);
+                if (existingMeta?.planned && !meta?.planned) {
+                    normalized[existingIndex] = event;
+                } else if (existingMeta?.planned === meta?.planned && shouldReplaceCalendarEvent(existing, event)) {
+                    normalized[existingIndex] = event;
+                }
+            });
+
+            return normalized;
+        }
+
         function renderCalendarData(holidaysData, eventsData) {
             cachedHolidays = normalizeHolidayEvents(Array.isArray(holidaysData) ? holidaysData : []);
-            allEvents = Array.isArray(eventsData) ? eventsData : [];
+            allEvents = normalizeCalendarEvents(eventsData);
             if (calendar) applyFilter();
         }
 
@@ -3074,6 +3144,20 @@
                     openDaySheet(info.dateStr);
                 },
 
+                eventContent: function(arg) {
+                    const eventData = {
+                        title: arg.event.title,
+                        start: arg.event.startStr,
+                        end: arg.event.endStr,
+                        extendedProps: arg.event.extendedProps
+                    };
+                    if (!isLunaTreeEvent(eventData)) return true;
+                    const titleEl = document.createElement('span');
+                    titleEl.className = 'fc-event-title';
+                    titleEl.textContent = getLunaTreeDisplayTitle(eventData);
+                    return { domNodes: [titleEl] };
+                },
+
                 eventClassNames: function(arg) {
                     if (arg.event.extendedProps.is_holiday) return ['fc-event-holiday'];
                     const classes = [];
@@ -3091,19 +3175,6 @@
                 },
 
                 eventDidMount: function(info) {
-                    const eventData = {
-                        title: info.event.title,
-                        start: info.event.startStr,
-                        end: info.event.endStr,
-                        extendedProps: info.event.extendedProps
-                    };
-                    if (isLunaTreeEvent(eventData)) {
-                        const meta = parseLunaTreeMeta(eventData);
-                        if (meta?.planned) {
-                            const titleEl = info.el.querySelector('.fc-event-title');
-                            if (titleEl) titleEl.textContent = `${LUNA_TREE_TITLE} 予定`;
-                        }
-                    }
                     if (!info.event.extendedProps.is_holiday) {
                         const baseColor = info.event.backgroundColor || '#7a94a6';
                         info.el.style.setProperty('--fc-event-bg-alpha-color', hexToRgba(baseColor, 0.15));
@@ -3278,7 +3349,7 @@
                     const isHoliday = ev.extendedProps?.is_holiday === 1;
                     const isLunaTree = isLunaTreeEvent(ev);
                     const lunaTreeMeta = isLunaTree ? parseLunaTreeMeta(ev) : null;
-                    const displayTitle = isLunaTree && lunaTreeMeta?.planned ? `${LUNA_TREE_TITLE} 予定` : ev.title;
+                    const displayTitle = isLunaTree ? getLunaTreeDisplayTitle(ev) : ev.title;
                     const eventColor = isHoliday ? '#d93025' : (ev.color || (ev.extendedProps.is_shared ? '#8fa89b' : '#7a94a6'));
                     const isMine = ev.extendedProps.is_mine;
                     
