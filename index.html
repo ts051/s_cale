@@ -714,6 +714,19 @@
             gap: 14px;
             flex: 0 0 auto;
         }
+        .luna-tree-scope-fixed {
+            display: inline-flex;
+            align-items: center;
+            min-height: 34px;
+            padding: 0 10px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            background: #f8f9fa;
+            color: #3c4043;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
         .luna-tree-radio-label {
             display: inline-flex;
             align-items: center;
@@ -770,7 +783,7 @@
         }
         .luna-tree-action-row {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 8px;
             margin-top: 12px;
         }
@@ -903,6 +916,11 @@
             }
             .luna-tree-scope-options {
                 gap: 8px;
+            }
+            .luna-tree-scope-fixed {
+                min-height: 34px;
+                padding: 0 8px;
+                font-size: 13px;
             }
             .luna-tree-radio-label {
                 font-size: 13px;
@@ -1336,39 +1354,34 @@
                 <div class="luna-tree-panel luna-tree-display-panel">
                     <div class="luna-tree-muted luna-tree-display-title">カレンダー表示設定</div>
                     <div class="luna-tree-display-row">
-                        <div class="luna-tree-scope-options">
-                            <label class="luna-tree-radio-label"><input type="radio" name="lunaTreeScope" value="shared" checked onchange="handleLunaTreeScopeChange()"> 共有</label>
-                            <label class="luna-tree-radio-label"><input type="radio" name="lunaTreeScope" value="private" onchange="handleLunaTreeScopeChange()"> 個人</label>
-                        </div>
+                        <div class="luna-tree-scope-fixed">共有</div>
                         <label class="luna-tree-label-control" for="lunaTreeLabelId">
                             <span class="luna-tree-muted">ラベル</span>
-                            <select id="lunaTreeLabelId" class="luna-tree-select"></select>
+                            <select id="lunaTreeLabelId" class="luna-tree-select" onchange="scheduleLunaTreeAutoSave()"></select>
                         </label>
                     </div>
                     <div class="luna-tree-action-row">
-                        <button type="button" class="btn-cancel" onclick="showSection('calendar')">キャンセル</button>
+                        <button type="button" class="btn-cancel" onclick="showSection('calendar')">戻る</button>
                         <button type="button" class="btn btn-secondary" onclick="addLunaTreeRow()">新規</button>
-                        <button type="button" class="btn-block btn-save" onclick="saveLunaTree()">保存</button>
                     </div>
                 </div>
 
                 <div class="luna-tree-stats" id="lunaTreeStats">
                     <div>
                         <div class="luna-tree-stat-value" id="lunaTreeElapsed">-</div>
-                        <div class="luna-tree-stat-label">前回開始日からの経過日数</div>
+                        <div class="luna-tree-stat-label">経過日数</div>
                     </div>
                     <div>
                         <div class="luna-tree-stat-value" id="lunaTreeAverageCycle">-</div>
-                        <div class="luna-tree-stat-label">直近12ヶ月平均周期</div>
+                        <div class="luna-tree-stat-label">平均周期</div>
                     </div>
                     <div>
                         <div class="luna-tree-stat-value" id="lunaTreeAveragePeriod">-</div>
-                        <div class="luna-tree-stat-label">直近12ヶ月平均生理期間</div>
+                        <div class="luna-tree-stat-label">平均日数</div>
                     </div>
                 </div>
 
                 <div class="luna-tree-panel">
-                    <div class="luna-tree-muted" style="margin-bottom: 10px;">生理開始日と終了日</div>
                     <div id="lunaTreeMonthList"></div>
                 </div>
             </div>
@@ -1540,6 +1553,10 @@
         let pendingDayCardDrop = null;
         let suppressDayCardClickUntil = 0;
         let lunaTreeEvents = [];
+        let lunaTreeAutoSaveTimer = null;
+        let lunaTreeIsSaving = false;
+        let lunaTreeSaveQueued = false;
+        let lunaTreeReadyForAutoSave = false;
         const LUNA_TREE_TITLE = '🚺';
         const LUNA_TREE_MEMO_PREFIX = 'LunaTree:';
 
@@ -2003,15 +2020,11 @@
                 });
         }
 
-        function handleLunaTreeScopeChange() {
-            populateLunaTreeLabelSelect();
-        }
-
         function populateLunaTreeLabelSelect(selectedLabelId) {
             const select = document.getElementById('lunaTreeLabelId');
-            const isShared = document.querySelector('input[name="lunaTreeScope"]:checked')?.value !== 'private';
-            const labels = cachedLabels
-                .filter(label => isShared ? label.is_shared : !label.is_shared)
+            const individualLabels = cachedLabels.filter(label => !label.is_shared);
+            const sourceLabels = individualLabels.length > 0 ? individualLabels : cachedLabels;
+            const labels = sourceLabels
                 .sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999) || a.id - b.id);
             select.innerHTML = '';
             labels.forEach(label => {
@@ -2030,8 +2043,6 @@
         function syncLunaTreeControlsFromEvents() {
             const owned = getOwnedLunaTreeEvents().sort((a, b) => String(b.start).localeCompare(String(a.start)));
             const latest = owned[0];
-            const isShared = latest ? latest.extendedProps?.is_shared !== false : true;
-            document.querySelector(`input[name="lunaTreeScope"][value="${isShared ? 'shared' : 'private'}"]`).checked = true;
             populateLunaTreeLabelSelect(latest?.extendedProps?.label_id);
         }
 
@@ -2101,14 +2112,17 @@
         }
 
         function renderLunaTreePage() {
+            lunaTreeReadyForAutoSave = false;
             syncLunaTreeControlsFromEvents();
             renderLunaTreeRows();
             refreshLunaTreeAutoPlansFromRows();
+            lunaTreeReadyForAutoSave = true;
         }
 
         function loadLunaTreePage() {
             const alertDiv = document.getElementById('lunaTreeAlert');
             alertDiv.innerText = '';
+            lunaTreeReadyForAutoSave = false;
             Promise.all([loadLabels(), loadLunaTreeEvents()])
                 .then(renderLunaTreePage)
                 .catch(error => {
@@ -2121,6 +2135,7 @@
             const row = button.closest('.luna-tree-row');
             row.remove();
             refreshLunaTreeAutoPlansFromRows();
+            scheduleLunaTreeAutoSave();
         }
 
         function setLunaTreeRowPeriodText(row) {
@@ -2142,6 +2157,7 @@
             const row = source.closest ? source.closest('.luna-tree-row') : source;
             setLunaTreeRowPeriodText(row);
             refreshLunaTreeAutoPlansFromRows();
+            scheduleLunaTreeAutoSave();
         }
 
         function addLunaTreeRow() {
@@ -2153,12 +2169,27 @@
                 meta: { endDate: '', periodLength: 0, planned: false }
             }));
             refreshLunaTreeAutoPlansFromRows();
+            scheduleLunaTreeAutoSave();
         }
 
-        async function saveLunaTree() {
+        function scheduleLunaTreeAutoSave(delay = 700) {
+            if (!lunaTreeReadyForAutoSave) return;
+            clearTimeout(lunaTreeAutoSaveTimer);
+            lunaTreeAutoSaveTimer = setTimeout(() => {
+                saveLunaTree({ auto: true });
+            }, delay);
+        }
+
+        async function saveLunaTree(options = {}) {
+            if (lunaTreeIsSaving) {
+                lunaTreeSaveQueued = true;
+                return;
+            }
+            clearTimeout(lunaTreeAutoSaveTimer);
+            lunaTreeIsSaving = true;
             const alertDiv = document.getElementById('lunaTreeAlert');
             alertDiv.innerText = '';
-            const isShared = document.querySelector('input[name="lunaTreeScope"]:checked')?.value !== 'private';
+            const isShared = true;
             const labelId = document.getElementById('lunaTreeLabelId').value || null;
             const rows = Array.from(document.querySelectorAll('.luna-tree-row'));
             const existingActuals = getLunaTreeActualEntriesFromEvents();
@@ -2177,6 +2208,7 @@
 
                 if (!start && endDate) {
                     alertDiv.innerText = '開始日を入力してください。';
+                    lunaTreeIsSaving = false;
                     return;
                 }
 
@@ -2190,6 +2222,7 @@
 
                 if (start && endDate && endDate < start) {
                     alertDiv.innerText = '終了日は開始日以降にしてください。';
+                    lunaTreeIsSaving = false;
                     return;
                 }
 
@@ -2198,7 +2231,7 @@
                 const payload = {
                     title: LUNA_TREE_TITLE,
                     start,
-                    end: endDate ? addDaysToDateStr(endDate, 1) : addDaysToDateStr(start, 1),
+                    end: addDaysToDateStr(start, 1),
                     memo: lunaTreeMemo(month, endDate, periodLength, false),
                     allDay: true,
                     is_all_day: true,
@@ -2250,6 +2283,8 @@
             });
 
             try {
+                alertDiv.style.color = '#70757a';
+                alertDiv.innerText = '保存中...';
                 const responses = await Promise.all(requests);
                 if (responses.some(response => !response.ok)) throw new Error('save failed');
                 await refreshEvents();
@@ -2259,12 +2294,18 @@
                     openDaySheet(selectedDateStr);
                 }
                 alertDiv.style.color = '#137333';
-                alertDiv.innerText = 'LunaTreeを保存しました。';
+                alertDiv.innerText = '保存しました。';
                 setTimeout(() => { alertDiv.innerText = ''; alertDiv.style.color = ''; }, 3000);
             } catch (error) {
                 console.error(error);
                 alertDiv.style.color = '';
                 alertDiv.innerText = 'LunaTreeを保存できませんでした。';
+            } finally {
+                lunaTreeIsSaving = false;
+                if (lunaTreeSaveQueued) {
+                    lunaTreeSaveQueued = false;
+                    scheduleLunaTreeAutoSave(100);
+                }
             }
         }
 
