@@ -2170,6 +2170,25 @@
             clearTimeout(lunaTreeAutoSaveTimer);
         }
 
+        function syncLunaTreeRowEventIdsFromEvents() {
+            const eventIdsByKey = new Map();
+            getLunaTreeActualEntriesFromEvents().forEach(item => {
+                const key = `${item.start}|${item.meta.endDate || ''}`;
+                if (!eventIdsByKey.has(key)) eventIdsByKey.set(key, []);
+                eventIdsByKey.get(key).push(getLunaTreeEventId(item.event));
+            });
+
+            Array.from(document.querySelectorAll('.luna-tree-row')).forEach(row => {
+                const start = row.querySelector('.luna-tree-start').value;
+                if (!start) return;
+                const endDate = row.querySelector('.luna-tree-end').value;
+                const ids = eventIdsByKey.get(`${start}|${endDate}`);
+                if (ids?.length) {
+                    row.dataset.eventId = ids.shift();
+                }
+            });
+        }
+
         function scheduleLunaTreeAutoSave(delay = 700) {
             if (!lunaTreeReadyForAutoSave) return;
             clearTimeout(lunaTreeAutoSaveTimer);
@@ -2287,7 +2306,7 @@
                 if (responses.some(response => !response.ok)) throw new Error('save failed');
                 await refreshEvents();
                 await loadLunaTreeEvents();
-                renderLunaTreePage();
+                syncLunaTreeRowEventIdsFromEvents();
                 if (document.getElementById('daySheet').classList.contains('open') && selectedDateStr) {
                     openDaySheet(selectedDateStr);
                 }
