@@ -1468,7 +1468,7 @@
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
                     <span style="min-width: 45px; font-weight: bold;">開始：</span>
                     <input type="date" id="eventStart">
-                    <input type="time" id="startTime" value="09:00" style="display: none;">
+                    <input type="time" id="startTime" value="09:00" style="display: none;" onchange="syncEndTimeFromStart()">
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
                     <span style="min-width: 45px; font-weight: bold;">終了：</span>
@@ -2564,6 +2564,25 @@
             const isAllDay = document.getElementById('isAllDay').checked;
             document.getElementById('startTime').style.display = isAllDay ? 'none' : 'inline-block';
             document.getElementById('endTime').style.display = isAllDay ? 'none' : 'inline-block';
+        }
+
+        function syncEndTimeFromStart() {
+            const startTimeInput = document.getElementById('startTime');
+            const endTimeInput = document.getElementById('endTime');
+            const startDateInput = document.getElementById('eventStart');
+            const endDateInput = document.getElementById('eventEnd');
+            const match = /^(\d{2}):(\d{2})$/.exec(startTimeInput.value);
+            if (!match) return;
+
+            const totalMinutes = Number(match[1]) * 60 + Number(match[2]) + 60;
+            const endMinutes = totalMinutes % (24 * 60);
+            endTimeInput.value = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
+
+            if (startDateInput.value) {
+                endDateInput.value = totalMinutes >= 24 * 60
+                    ? addDaysToDateStr(startDateInput.value, 1)
+                    : startDateInput.value;
+            }
         }
 
         // データベースに登録されている終了日(翌日0時)を、画面(終了日当日)用にマイナス1日して返す
