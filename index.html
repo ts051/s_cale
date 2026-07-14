@@ -1245,6 +1245,8 @@
             gap: 8px; 
             margin-top: 16px; 
         }
+        .recurrence-delete-actions { flex-direction: column; }
+        .recurrence-delete-actions .btn { width: 100%; padding: 10px 12px; }
         .btn { 
             padding: 6px 16px; 
             border: none; 
@@ -1496,11 +1498,24 @@
             </div>
 
             <input type="hidden" id="editingEventId">
+            <input type="hidden" id="editingOccurrenceStart">
+            <input type="hidden" id="editingEventWasRecurring">
             
             <div class="modal-btns">
                 <button class="btn" style="background-color:#8f1f2d; color:white; display:none; margin-right:auto;" id="btnDeleteModal" onclick="deleteEventFromModal()">削除</button>
                 <button class="btn btn-secondary" onclick="closeRegisterModal()">キャンセル</button>
                 <button class="btn btn-primary" id="btnSaveEventModal" onclick="saveEvent()">保存</button>
+            </div>
+        </div>
+
+        <div class="modal" id="recurrenceDeleteModal">
+            <div class="drag-action-title">繰り返し予定の削除</div>
+            <div class="drag-action-summary">どの予定を削除しますか？</div>
+            <div class="modal-btns recurrence-delete-actions">
+                <button class="btn btn-outline" onclick="confirmRecurrenceDelete('single')">この予定のみ</button>
+                <button class="btn btn-outline" onclick="confirmRecurrenceDelete('future')">この日以降の予定</button>
+                <button class="btn" style="background-color:#8f1f2d; color:white;" onclick="confirmRecurrenceDelete('all')">すべての繰り返し予定</button>
+                <button class="btn btn-muted" onclick="closeRecurrenceDeleteModal(true)">キャンセル</button>
             </div>
         </div>
 
@@ -1517,7 +1532,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="static/supabase-config.js?v=account-name-2"></script>
-    <script src="static/local-api.js?v=account-name-5"></script>
+    <script src="static/local-api.js?v=recurrence-delete-1"></script>
     <script>
         let calendar;
         let allEvents = [];
@@ -3421,6 +3436,8 @@
 
         function openRegisterModal(startStr, endStr) {
             document.getElementById('editingEventId').value = '';
+            document.getElementById('editingOccurrenceStart').value = '';
+            document.getElementById('editingEventWasRecurring').value = '';
             document.getElementById('btnDeleteModal').style.display = 'none';
             document.getElementById('eventStart').value = startStr;
             document.getElementById('eventEnd').value = endStr;
@@ -3440,6 +3457,8 @@
 
         function openEditModal(ev) {
             document.getElementById('editingEventId').value = ev.extendedProps?.original_id || ev.id;
+            document.getElementById('editingOccurrenceStart').value = ev.extendedProps?.occurrence_start || ev.start;
+            document.getElementById('editingEventWasRecurring').value = ev.extendedProps?.recurrence ? '1' : '';
             document.getElementById('btnDeleteModal').style.display = 'block';
             document.getElementById('eventTitle').value = ev.title;
             document.getElementById('isShared').checked = ev.extendedProps.is_shared;
@@ -3488,7 +3507,7 @@
                 document.getElementById('overlay').style.display = 'none';
             }
         }
-        function closeAllModals() { closeDaySheet(); closeRegisterModal(); closeEventDragActionModal(false); }
+        function closeAllModals() { closeDaySheet(); closeRegisterModal(); closeEventDragActionModal(false); closeRecurrenceDeleteModal(false); }
 
         function setEventSaveBusy(isBusy) {
             isSavingEvent = isBusy;
@@ -3597,24 +3616,54 @@
         function deleteEventFromModal() {
             const editingId = document.getElementById('editingEventId').value;
             if (!editingId) return;
+            if (document.getElementById('editingEventWasRecurring').value === '1') {
+                document.getElementById('eventModal').style.display = 'none';
+                document.getElementById('recurrenceDeleteModal').style.display = 'block';
+                return;
+            }
             if (!confirm("この予定を削除しますか？")) return;
+            performEventDelete('all');
+        }
 
-            fetch(`/api/events/${editingId}`, { method: 'DELETE' })
-            .then(res => {
-                if (res.ok) {
+        function closeRecurrenceDeleteModal(restoreEditor) {
+            const modal = document.getElementById('recurrenceDeleteModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+            if (restoreEditor && document.getElementById('editingEventId').value) {
+                document.getElementById('eventModal').style.display = 'block';
+            }
+        }
+
+        function confirmRecurrenceDelete(scope) {
+            performEventDelete(scope);
+        }
+
+        function performEventDelete(scope) {
+            const editingId = document.getElementById('editingEventId').value;
+            const occurrenceStart = document.getElementById('editingOccurrenceStart').value;
+
+            fetch(`/api/events/${editingId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scope, occurrence_start: occurrenceStart })
+            })
+            .then(async res => {
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.success) {
                     refreshEvents().then(() => {
+                        closeRecurrenceDeleteModal(false);
                         closeRegisterModal();
                         if (document.getElementById('daySheet').classList.contains('open')) {
                             openDaySheet(selectedDateStr);
                         }
                     });
-                } else {
-                    alert("サーバー側での削除に失敗しました。");
+                    return;
                 }
+                throw new Error(data.error || "サーバー側での削除に失敗しました。");
             })
             .catch(err => {
                 console.error(err);
-                alert("通信エラーが発生しました。");
+                alert(err.message || "通信エラーが発生しました。");
             });
         }
 

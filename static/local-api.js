@@ -404,6 +404,7 @@
         label_id: row.label_id,
         label_order: label?.sort_order || 999,
         recurrence: row.recurrence || null,
+        occurrence_start: row.start_time,
         memo: row.memo || '',
         is_holiday: 0
       }
@@ -431,14 +432,18 @@
 
       const duration = end.getTime() - start.getTime();
       const hasTime = row.start_time.includes('T');
+      const recurrenceUntil = parseDateTime(row.recurrence_until);
+      const recurrenceExceptions = new Set(Array.isArray(row.recurrence_exceptions) ? row.recurrence_exceptions : []);
       let current = new Date(start.getTime());
       let guard = 0;
-      while (current <= endLimit && guard < 1000) {
-        if (current >= startLimit) {
+      while (current <= endLimit && (!recurrenceUntil || current < recurrenceUntil) && guard < 1000) {
+        const occurrenceStart = formatDateTime(current, hasTime);
+        if (current >= startLimit && !recurrenceExceptions.has(occurrenceStart)) {
           const occurrence = JSON.parse(JSON.stringify(base));
           occurrence.id = `${row.id}_${formatDateTime(current, false).replaceAll('-', '')}`;
-          occurrence.start = formatDateTime(current, hasTime);
+          occurrence.start = occurrenceStart;
           occurrence.end = formatDateTime(new Date(current.getTime() + duration), hasTime);
+          occurrence.extendedProps.occurrence_start = occurrenceStart;
           output.push(occurrence);
         }
         current = addRecurrenceDate(current, row.recurrence);
@@ -502,7 +507,7 @@
     const eventsFilter = buildEventsFilter(user.id, searchParams);
     const rows = await selectAll(() => client
         .from('events')
-        .select('id, owner_id, title, start_time, end_time, is_shared, is_all_day, label_id, recurrence, memo')
+        .select('id, owner_id, title, start_time, end_time, is_shared, is_all_day, label_id, recurrence, recurrence_until, recurrence_exceptions, memo')
         .or(eventsFilter)
         .order('id', { ascending: true }));
     return expandRecurrence(rows.filter(row => isEventInRange(row, searchParams)), user.id, labels, searchParams);
@@ -831,8 +836,37 @@
         return jsonResponse({ success: true });
       }
       if (eventMatch && method === 'DELETE') {
-        const { error } = await client.from('events').delete().eq('id', Number(eventMatch[1]));
-        if (error) throw error;
+        const eventId = Number(eventMatch[1]);
+        const data = await bodyJson(input, init);
+        const scope = data.scope || 'all';
+        const { data: event, error: selectError } = await client
+          .from('events')
+          .select('id, start_time, recurrence, recurrence_exceptions')
+          .eq('id', eventId)
+          .single();
+        if (selectError) throw selectError;
+
+        if (event.recurrence && (scope === 'single' || scope === 'future')) {
+          const occurrenceStart = data.occurrence_start;
+          if (!occurrenceStart || occurrenceStart < event.start_time) {
+            return jsonResponse({ error: 'Invalid occurrence_start' }, 400);
+          }
+          if (scope === 'single') {
+            const exceptions = Array.isArray(event.recurrence_exceptions) ? event.recurrence_exceptions.slice() : [];
+            if (!exceptions.includes(occurrenceStart)) exceptions.push(occurrenceStart);
+            const { error } = await client.from('events').update({ recurrence_exceptions: exceptions }).eq('id', eventId);
+            if (error) throw error;
+          } else if (occurrenceStart === event.start_time) {
+            const { error } = await client.from('events').delete().eq('id', eventId);
+            if (error) throw error;
+          } else {
+            const { error } = await client.from('events').update({ recurrence_until: occurrenceStart }).eq('id', eventId);
+            if (error) throw error;
+          }
+        } else {
+          const { error } = await client.from('events').delete().eq('id', eventId);
+          if (error) throw error;
+        }
         return jsonResponse({ success: true });
       }
 
