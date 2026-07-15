@@ -1519,6 +1519,17 @@
             </div>
         </div>
 
+        <div class="modal" id="recurrenceSaveModal">
+            <div class="drag-action-title">繰り返し予定の変更</div>
+            <div class="drag-action-summary">変更をどの予定に反映しますか？</div>
+            <div class="modal-btns recurrence-delete-actions">
+                <button class="btn btn-outline" onclick="confirmRecurrenceSave('single')">この予定のみ</button>
+                <button class="btn btn-outline" onclick="confirmRecurrenceSave('future')">この日以降の予定</button>
+                <button class="btn btn-primary" onclick="confirmRecurrenceSave('all')">すべての繰り返し予定</button>
+                <button class="btn btn-muted" onclick="closeRecurrenceSaveModal(true)">キャンセル</button>
+            </div>
+        </div>
+
         <div class="modal" id="eventDragActionModal">
             <div class="drag-action-title">予定をどうしますか？</div>
             <div class="drag-action-summary" id="eventDragActionSummary"></div>
@@ -1532,11 +1543,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="static/supabase-config.js?v=account-name-2"></script>
-    <script src="static/local-api.js?v=recurrence-delete-1"></script>
+    <script src="static/local-api.js?v=recurrence-edit-1"></script>
     <script>
         let calendar;
         let allEvents = [];
         let isSavingEvent = false;
+        let pendingRecurringSave = null;
         let cachedLabels = [];
         let cachedHolidays = []; // 祝日データを一時保持するキャッシュ配列を追加
         let isAnimating = false;
@@ -3526,7 +3538,7 @@
                 document.getElementById('overlay').style.display = 'none';
             }
         }
-        function closeAllModals() { closeDaySheet(); closeRegisterModal(); closeEventDragActionModal(false); closeRecurrenceDeleteModal(false); }
+        function closeAllModals() { closeDaySheet(); closeRegisterModal(); closeEventDragActionModal(false); closeRecurrenceDeleteModal(false); closeRecurrenceSaveModal(false); }
 
         function setEventSaveBusy(isBusy) {
             isSavingEvent = isBusy;
@@ -3588,6 +3600,34 @@
 
             const eventId = document.getElementById('editingEventId').value;
 
+            if (eventId && document.getElementById('editingEventWasRecurring').value === '1') {
+                pendingRecurringSave = { payload, eventId };
+                document.getElementById('eventModal').style.display = 'none';
+                document.getElementById('recurrenceSaveModal').style.display = 'block';
+                return;
+            }
+
+            performEventSave(payload, eventId);
+        }
+
+        function closeRecurrenceSaveModal(restoreEditor) {
+            const modal = document.getElementById('recurrenceSaveModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+            if (restoreEditor && document.getElementById('editingEventId').value) {
+                document.getElementById('eventModal').style.display = 'block';
+            } else {
+                pendingRecurringSave = null;
+            }
+        }
+
+        function confirmRecurrenceSave(scope) {
+            if (!pendingRecurringSave || isSavingEvent) return;
+            const { payload, eventId } = pendingRecurringSave;
+            performEventSave(payload, eventId, scope);
+        }
+
+        function performEventSave(payload, eventId, scope) {
             const url = eventId
                 ? `/api/events/${eventId}`
                 : '/api/events';
@@ -3603,7 +3643,11 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(scope ? {
+                    ...payload,
+                    scope,
+                    occurrence_start: document.getElementById('editingOccurrenceStart').value
+                } : payload)
             })
             .then(res => {
                 if (!res.ok) {
@@ -3613,6 +3657,7 @@
             })
             .then(data => {
                 if (data.success) {
+                    closeRecurrenceSaveModal(false);
                     closeRegisterModal();
                     refreshEvents().then(() => {
                         if (document.getElementById('daySheet').classList.contains('open') && selectedDateStr) {

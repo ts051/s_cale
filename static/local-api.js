@@ -820,6 +820,7 @@
 
       const eventMatch = path.match(/^\/api\/events\/(\d+)$/);
       if (eventMatch && method === 'PUT') {
+        const eventId = Number(eventMatch[1]);
         const data = await bodyJson(input, init);
         const row = {
           title: data.title,
@@ -831,7 +832,80 @@
           recurrence: data.recurrence || null,
           memo: data.memo || ''
         };
-        const { error } = await client.from('events').update(row).eq('id', Number(eventMatch[1]));
+        const scope = data.scope || 'all';
+        const occurrenceStart = data.occurrence_start;
+        const { data: event, error: selectError } = await client
+          .from('events')
+          .select('id, owner_id, start_time, end_time, recurrence, recurrence_until, recurrence_exceptions')
+          .eq('id', eventId)
+          .single();
+        if (selectError) throw selectError;
+
+        if (event.recurrence && (scope === 'single' || scope === 'future')) {
+          if (!occurrenceStart || occurrenceStart < event.start_time) {
+            return jsonResponse({ error: 'Invalid occurrence_start' }, 400);
+          }
+
+          const insertedRow = {
+            ...row,
+            owner_id: event.owner_id,
+            recurrence: scope === 'single' ? null : row.recurrence
+          };
+          const { data: inserted, error: insertError } = await client
+            .from('events')
+            .insert(insertedRow)
+            .select('id')
+            .single();
+          if (insertError) throw insertError;
+
+          let seriesError = null;
+          if (scope === 'single') {
+            const exceptions = Array.isArray(event.recurrence_exceptions) ? event.recurrence_exceptions.slice() : [];
+            if (!exceptions.includes(occurrenceStart)) exceptions.push(occurrenceStart);
+            ({ error: seriesError } = await client.from('events').update({ recurrence_exceptions: exceptions }).eq('id', eventId));
+          } else if (occurrenceStart === event.start_time) {
+            ({ error: seriesError } = await client.from('events').delete().eq('id', eventId));
+          } else {
+            ({ error: seriesError } = await client.from('events').update({ recurrence_until: occurrenceStart }).eq('id', eventId));
+          }
+
+          if (seriesError) {
+            await client.from('events').delete().eq('id', inserted.id);
+            throw seriesError;
+          }
+          return jsonResponse({ success: true, id: inserted.id });
+        }
+
+        if (event.recurrence && occurrenceStart && row.recurrence) {
+          const occurrenceDate = parseDateTime(occurrenceStart);
+          const editedStart = parseDateTime(row.start_time);
+          const editedEnd = parseDateTime(row.end_time);
+          const baseStart = parseDateTime(event.start_time);
+          if (!occurrenceDate || !editedStart || !editedEnd || !baseStart) {
+            return jsonResponse({ error: 'Invalid event datetime' }, 400);
+          }
+          const delta = editedStart.getTime() - occurrenceDate.getTime();
+          const duration = editedEnd.getTime() - editedStart.getTime();
+          const adjustedBaseStart = new Date(baseStart.getTime() + delta);
+          const hasTime = row.start_time.includes('T');
+          row.start_time = formatDateTime(adjustedBaseStart, hasTime);
+          row.end_time = formatDateTime(new Date(adjustedBaseStart.getTime() + duration), hasTime);
+
+          row.recurrence_exceptions = (Array.isArray(event.recurrence_exceptions) ? event.recurrence_exceptions : [])
+            .map(value => parseDateTime(value))
+            .filter(Boolean)
+            .map(value => formatDateTime(new Date(value.getTime() + delta), hasTime));
+          const untilDate = parseDateTime(event.recurrence_until);
+          row.recurrence_until = untilDate
+            ? formatDateTime(new Date(untilDate.getTime() + delta), hasTime)
+            : null;
+        }
+        if (!row.recurrence) {
+          row.recurrence_exceptions = [];
+          row.recurrence_until = null;
+        }
+
+        const { error } = await client.from('events').update(row).eq('id', eventId);
         if (error) throw error;
         return jsonResponse({ success: true });
       }
