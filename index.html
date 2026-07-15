@@ -1467,7 +1467,7 @@
             <div class="modal-field" style="gap: 12px; align-items: flex-start; flex-direction: column; margin-bottom: 16px;">
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
                     <span style="min-width: 45px; font-weight: bold;">開始：</span>
-                    <input type="date" id="eventStart">
+                    <input type="date" id="eventStart" onchange="syncEndDateFromStart()">
                     <input type="time" id="startTime" value="09:00" style="display: none;" onchange="syncEndTimeFromStart()">
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
@@ -1553,6 +1553,7 @@
         let cachedHolidays = []; // 祝日データを一時保持するキャッシュ配列を追加
         let isAnimating = false;
         let selectedDateStr = "";
+        let lastEventStartDate = "";
         let currentUser = null;
         let lastSelectedLabelId = null;
         let calendarDataInitialized = false;
@@ -2625,6 +2626,28 @@
             return `${yyyy}-${m}-${d}`;
         }
 
+        function syncEndDateFromStart() {
+            const startInput = document.getElementById('eventStart');
+            const endInput = document.getElementById('eventEnd');
+            const newStartDate = startInput.value;
+            if (!newStartDate) return;
+
+            if (lastEventStartDate && endInput.value) {
+                const parseUtcDate = value => {
+                    const [year, month, day] = value.split('-').map(Number);
+                    return Date.UTC(year, month - 1, day);
+                };
+                const dayDifference = Math.round(
+                    (parseUtcDate(newStartDate) - parseUtcDate(lastEventStartDate)) / (24 * 60 * 60 * 1000)
+                );
+                endInput.value = addDaysToDateStr(endInput.value, dayDifference);
+            } else if (!endInput.value) {
+                endInput.value = newStartDate;
+            }
+
+            lastEventStartDate = newStartDate;
+        }
+
         function formatDateForEventPayload(dateObj, allDay) {
             const yyyy = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -3472,6 +3495,7 @@
             document.getElementById('btnDeleteModal').style.display = 'none';
             document.getElementById('eventStart').value = startStr;
             document.getElementById('eventEnd').value = endStr;
+            lastEventStartDate = startStr;
             document.getElementById('eventTitle').value = '';
             document.getElementById('isShared').checked = true;
             document.getElementById('isAllDay').checked = true;
@@ -3505,6 +3529,7 @@
                 displayEndDate = adjustEndDateForUI(displayEndDate, true);
             }
             document.getElementById('eventEnd').value = displayEndDate;
+            lastEventStartDate = startDateParts[0];
             
             if (!ev.allDay && startDateParts[1]) {
                 document.getElementById('startTime').value = startDateParts[1].substring(0, 5);
