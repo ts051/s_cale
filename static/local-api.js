@@ -848,7 +848,7 @@
 
           const insertedRow = {
             ...row,
-            owner_id: event.owner_id,
+            owner_id: user.id,
             recurrence: scope === 'single' ? null : row.recurrence
           };
           const { data: inserted, error: insertError } = await client
