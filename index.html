@@ -1902,12 +1902,25 @@
             return value === null ? '-' : `${value}日`;
         }
 
-        function getOwnedLunaTreeEvents() {
-            return lunaTreeEvents.filter(event => isLunaTreeEvent(event) && event.extendedProps?.is_mine !== false);
+        function getSharedLunaTreeEvents() {
+            return lunaTreeEvents.filter(event => isLunaTreeEvent(event) && event.extendedProps?.is_shared !== false);
+        }
+
+        function getCanonicalSharedLunaTreeEvents() {
+            const eventsByKey = new Map();
+            getSharedLunaTreeEvents().forEach(event => {
+                const meta = parseLunaTreeMeta(event);
+                const start = String(event.start || '').split('T')[0];
+                if (!meta || !start) return;
+                const key = `${meta.planned ? 'planned' : 'actual'}|${start}`;
+                const existing = eventsByKey.get(key);
+                if (!existing || shouldReplaceCalendarEvent(existing, event)) eventsByKey.set(key, event);
+            });
+            return Array.from(eventsByKey.values());
         }
 
         function getLunaTreeActualEntriesFromEvents() {
-            return getOwnedLunaTreeEvents()
+            return getCanonicalSharedLunaTreeEvents()
                 .map(event => {
                     const meta = parseLunaTreeMeta(event);
                     const start = String(event.start || '').split('T')[0];
@@ -2015,8 +2028,8 @@
         }
 
         function syncLunaTreeControlsFromEvents() {
-            const owned = getOwnedLunaTreeEvents().sort((a, b) => String(b.start).localeCompare(String(a.start)));
-            const latest = owned[0];
+            const shared = getCanonicalSharedLunaTreeEvents().sort((a, b) => String(b.start).localeCompare(String(a.start)));
+            const latest = shared[0];
             populateLunaTreeLabelSelect(latest?.extendedProps?.label_id);
         }
 
@@ -2166,10 +2179,11 @@
             const isShared = true;
             const labelId = document.getElementById('lunaTreeLabelId').value || null;
             const rows = Array.from(document.querySelectorAll('.luna-tree-row'));
-            const existingActuals = getLunaTreeActualEntriesFromEvents();
-            const existingActualIds = new Set(existingActuals.map(item => String(getLunaTreeEventId(item.event))));
+            const existingActualEvents = getSharedLunaTreeEvents()
+                .filter(event => parseLunaTreeMeta(event)?.planned !== true);
+            const existingActualIds = new Set(existingActualEvents.map(event => String(getLunaTreeEventId(event))));
             const keptActualIds = new Set();
-            const existingPlans = getOwnedLunaTreeEvents()
+            const existingPlans = getSharedLunaTreeEvents()
                 .map(event => ({ event, meta: parseLunaTreeMeta(event), start: String(event.start || '').split('T')[0] }))
                 .filter(item => item.meta?.planned);
 
@@ -2389,9 +2403,8 @@
         function getLunaTreeDateDedupeKey(event) {
             const props = event?.extendedProps || {};
             const startDate = String(event?.start || '').split('T')[0];
-            const ownerKey = props.owner_id || props.user_id || (props.is_mine === true ? 'mine' : 'shared');
             const scopeKey = props.is_shared === false ? 'private' : 'shared';
-            return `${ownerKey}:${scopeKey}:${props.label_id || ''}:${startDate}`;
+            return `${scopeKey}:${startDate}`;
         }
 
         function normalizeCalendarEvents(eventsData) {
