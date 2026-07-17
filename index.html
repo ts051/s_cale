@@ -617,6 +617,15 @@
             margin-bottom: 1px !important;
             border: none !important;
         }
+        .fc .fc-daygrid-event .fc-event-main,
+        .fc .fc-daygrid-event .fc-event-title {
+            width: 100%;
+            text-align: left;
+        }
+        .fc .fc-daygrid-event.fc-event-short-single-day .fc-event-main,
+        .fc .fc-daygrid-event.fc-event-short-single-day .fc-event-title {
+            text-align: center;
+        }
         .fc .fc-daygrid-day-frame {
             height: 100% !important;
             max-height: 100% !important;
@@ -3029,6 +3038,32 @@
             });
         }
 
+        function isSingleDayCalendarEvent(event) {
+            const startDate = String(event.startStr || '').slice(0, 10);
+            const endDate = String(event.endStr || '').slice(0, 10);
+            if (!startDate || !endDate) return true;
+            if (!event.allDay) return startDate === endDate;
+
+            const nextDate = new Date(`${startDate}T00:00:00Z`);
+            nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+            return endDate <= nextDate.toISOString().slice(0, 10);
+        }
+
+        function getCalendarEventDisplayTitle(event) {
+            const eventData = {
+                title: event.title,
+                start: event.startStr,
+                end: event.endStr,
+                extendedProps: event.extendedProps
+            };
+            return isLunaTreeEvent(eventData) ? getLunaTreeDisplayTitle(eventData) : (event.title || '');
+        }
+
+        function shouldCenterCalendarEvent(event) {
+            const titleLength = Array.from(getCalendarEventDisplayTitle(event).trim()).length;
+            return titleLength <= 5 && isSingleDayCalendarEvent(event);
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             try {
             const calendarEl = document.getElementById('calendar');
@@ -3145,8 +3180,9 @@
                 },
 
                 eventClassNames: function(arg) {
-                    if (arg.event.extendedProps.is_holiday) return ['fc-event-holiday'];
                     const classes = [];
+                    if (arg.event.extendedProps.is_holiday) classes.push('fc-event-holiday');
+                    if (shouldCenterCalendarEvent(arg.event)) classes.push('fc-event-short-single-day');
                     if (isLunaTreeEvent({
                         title: arg.event.title,
                         start: arg.event.startStr,
