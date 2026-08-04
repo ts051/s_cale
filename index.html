@@ -1956,7 +1956,7 @@
         function getRecentLunaTreeActualEntries(actualEntries) {
             if (actualEntries.length === 0) return [];
             const latest = actualEntries[actualEntries.length - 1];
-            const startBoundary = addMonthsToDateStr(latest.start, -12);
+            const startBoundary = addMonthsToDateStr(latest.start, -3);
             return actualEntries.filter(item => item.start >= startBoundary && item.start <= latest.start);
         }
 
@@ -1966,7 +1966,8 @@
             for (let i = 1; i < recent.length; i += 1) {
                 cycles.push(dateDiffDays(recent[i - 1].start, recent[i].start));
             }
-            return average(cycles);
+            const averageCycle = average(cycles);
+            return averageCycle === null ? null : Math.floor(averageCycle);
         }
 
         function getLunaTreeAutoPlans(actualEntries) {
