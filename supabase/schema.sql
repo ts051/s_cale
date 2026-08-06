@@ -26,10 +26,15 @@ create table if not exists public.events (
   is_all_day boolean not null default true,
   label_id bigint references public.labels(id) on delete set null,
   recurrence text check (recurrence in ('weekly', 'monthly', 'yearly') or recurrence is null),
+  recurrence_until text,
+  recurrence_exceptions jsonb not null default '[]'::jsonb,
   memo text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.events add column if not exists recurrence_until text;
+alter table public.events add column if not exists recurrence_exceptions jsonb not null default '[]'::jsonb;
 
 alter table public.profiles enable row level security;
 alter table public.labels enable row level security;

@@ -238,6 +238,7 @@
         .btn-block:hover { background-color: #245b3a; }
         
         .settings-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .label-page-actions { margin-top: -6px; margin-bottom: 14px; }
         .btn-cancel { background-color: #6c757d; text-align: center; text-decoration: none; color: white; padding: 10px; border-radius: 4px; flex: 1; font-size: 16px; border: none; cursor: pointer; }
         .btn-cancel:hover { background-color: #5a6268; }
         .btn-save { flex: 1; padding: 10px; }
@@ -584,6 +585,15 @@
             margin-bottom: 1px !important;
             border: none !important;
         }
+        .fc .fc-daygrid-event .fc-event-main,
+        .fc .fc-daygrid-event .fc-event-title {
+            width: 100%;
+            text-align: left;
+        }
+        .fc .fc-daygrid-event.fc-event-short-single-day .fc-event-main,
+        .fc .fc-daygrid-event.fc-event-short-single-day .fc-event-title {
+            text-align: center;
+        }
         .fc .fc-daygrid-day-frame {
             height: 100% !important;
             max-height: 100% !important;
@@ -627,6 +637,10 @@
             background-color: var(--fc-event-bg-alpha-color, rgba(122, 148, 166, 0.15)) !important;
             color: var(--fc-event-text-solid-color, #7a94a6) !important;
             padding: 1px 4px !important;
+        }
+        .fc-daygrid-event:not(.fc-event-forced-all-day,.fc-event-holiday) .fc-event-main,
+        .fc-daygrid-event:not(.fc-event-forced-all-day,.fc-event-holiday) .fc-event-title {
+            color: var(--fc-event-text-solid-color, #7a94a6) !important;
         }
 
         /* 祝日のデザイン設定：他の終日予定の枠組と完全一致（アクセント線なし、濃い赤背景、白文字） */
@@ -867,6 +881,8 @@
             gap: 8px; 
             margin-top: 16px; 
         }
+        .recurrence-delete-actions { flex-direction: column; }
+        .recurrence-delete-actions .btn { width: 100%; padding: 10px 12px; }
         .btn { 
             padding: 6px 16px; 
             border: none; 
@@ -932,7 +948,7 @@
                     <div class="help-text">変更しない場合は空欄のままにしてください。</div>
                 </div>
                 <div class="settings-btns">
-                    <button type="button" class="btn-cancel" onclick="showSection('calendar')">キャンセル</button>
+                    <button type="button" class="btn-cancel" onclick="showSection('calendar')">戻る</button>
                     <button type="submit" class="btn-block btn-save">保存</button>
                 </div>
             </form>
@@ -942,27 +958,12 @@
     <div id="labelSection" class="spa-section settings-container">
         <div class="spa-card-wide settings-page-card">
             <h2>ラベル設定</h2>
-            
-            <div style="border: 1px solid #dadce0; padding: 12px; border-radius: 6px; margin-bottom: 20px; background-color: #fafafa; box-sizing: border-box;">
-                <h3 style="font-size: 14px; margin-top: 0; color: #3c4043;">新規ラベル作成</h3>
-                <input type="text" id="newLabelName" placeholder="ラベル名" class="drawer-input" style="width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 10px; font-size: 14px; border: 1px solid #dadce0; border-radius: 4px;">
-                <div class="drawer-row" style="margin-bottom: 12px;">
-                    <label style="font-weight: bold; font-size: 14px;">カラー：</label>
-                    <input type="color" id="newLabelColor" value="#7a94a6" style="width:24px; height:24px; border:none; padding:0; background:none; cursor:pointer; border-radius:50%; -webkit-appearance:none; appearance:none; flex-shrink:0;">
-                </div>
-                <div class="drawer-row" style="margin-bottom: 12px; gap: 16px;">
-                    <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="newLabelScope" value="shared" checked style="transform: scale(1.1); margin-right: 4px;"> 共有</label>
-                    <label style="font-size: 14px; cursor: pointer;"><input type="radio" name="newLabelScope" value="private" style="transform: scale(1.1); margin-right: 4px;"> 個人</label>
-                </div>
-                <button class="btn btn-primary" onclick="addNewLabel()" style="width: 100%; padding: 8px; font-size: 14px;">ラベルを追加</button>
+            <div class="settings-btns label-page-actions">
+                <button type="button" class="btn-cancel" onclick="showSection('calendar')">戻る</button>
+                <button type="button" class="btn-block btn-save" onclick="saveAllLabels()">保存</button>
             </div>
-
-            <h3 style="font-size: 14px; color: #3c4043; margin-bottom: 8px;">登録済みラベルの管理</h3>
+            <div class="alert-text" id="labelAlert"></div>
             <div class="label-mgmt-list" id="labelMgmtList" style="margin-bottom: 20px;"></div>
-
-            <div class="settings-btns">
-                <button type="button" class="btn-cancel" onclick="showSection('calendar')" style="width: 100%;">カレンダーに戻る</button>
-            </div>
         </div>
     </div>
 
@@ -1060,8 +1061,8 @@
             <div class="modal-field" style="gap: 12px; align-items: flex-start; flex-direction: column; margin-bottom: 16px;">
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
                     <span style="min-width: 45px; font-weight: bold;">開始：</span>
-                    <input type="date" id="eventStart">
-                    <input type="time" id="startTime" value="09:00" style="display: none;">
+                    <input type="date" id="eventStart" onchange="syncEndDateFromStart()">
+                    <input type="time" id="startTime" value="09:00" style="display: none;" onchange="syncEndTimeFromStart()">
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
                     <span style="min-width: 45px; font-weight: bold;">終了：</span>
@@ -1091,11 +1092,35 @@
             </div>
 
             <input type="hidden" id="editingEventId">
+            <input type="hidden" id="editingOccurrenceStart">
+            <input type="hidden" id="editingEventWasRecurring">
             
             <div class="modal-btns">
                 <button class="btn" style="background-color:#8f1f2d; color:white; display:none; margin-right:auto;" id="btnDeleteModal" onclick="deleteEventFromModal()">削除</button>
                 <button class="btn btn-secondary" onclick="closeRegisterModal()">キャンセル</button>
                 <button class="btn btn-primary" id="btnSaveEventModal" onclick="saveEvent()">保存</button>
+            </div>
+        </div>
+
+        <div class="modal" id="recurrenceDeleteModal">
+            <div class="drag-action-title">繰り返し予定の削除</div>
+            <div class="drag-action-summary">どの予定を削除しますか？</div>
+            <div class="modal-btns recurrence-delete-actions">
+                <button class="btn btn-outline" onclick="confirmRecurrenceDelete('single')">この予定のみ</button>
+                <button class="btn btn-outline" onclick="confirmRecurrenceDelete('future')">この日以降の予定</button>
+                <button class="btn" style="background-color:#8f1f2d; color:white;" onclick="confirmRecurrenceDelete('all')">すべての繰り返し予定</button>
+                <button class="btn btn-muted" onclick="closeRecurrenceDeleteModal(true)">キャンセル</button>
+            </div>
+        </div>
+
+        <div class="modal" id="recurrenceSaveModal">
+            <div class="drag-action-title">繰り返し予定の変更</div>
+            <div class="drag-action-summary">変更をどの予定に反映しますか？</div>
+            <div class="modal-btns recurrence-delete-actions">
+                <button class="btn btn-outline" onclick="confirmRecurrenceSave('single')">この予定のみ</button>
+                <button class="btn btn-outline" onclick="confirmRecurrenceSave('future')">この日以降の予定</button>
+                <button class="btn btn-primary" onclick="confirmRecurrenceSave('all')">すべての繰り返し予定</button>
+                <button class="btn btn-muted" onclick="closeRecurrenceSaveModal(true)">キャンセル</button>
             </div>
         </div>
 
@@ -1114,10 +1139,12 @@
         let calendar;
         let allEvents = [];
         let isSavingEvent = false;
+        let pendingRecurringSave = null;
         let cachedLabels = [];
         let cachedHolidays = []; // 祝日データを一時保持するキャッシュ配列を追加
         let isAnimating = false;
         let selectedDateStr = "";
+        let lastEventStartDate = "";
         let currentUser = null;
         let lastSelectedLabelId = null;
         let calendarDataInitialized = false;
@@ -1547,6 +1574,25 @@
             document.getElementById('endTime').style.display = isAllDay ? 'none' : 'inline-block';
         }
 
+        function syncEndTimeFromStart() {
+            const startTimeInput = document.getElementById('startTime');
+            const endTimeInput = document.getElementById('endTime');
+            const startDateInput = document.getElementById('eventStart');
+            const endDateInput = document.getElementById('eventEnd');
+            const match = /^(\d{2}):(\d{2})$/.exec(startTimeInput.value);
+            if (!match) return;
+
+            const totalMinutes = Number(match[1]) * 60 + Number(match[2]) + 60;
+            const endMinutes = totalMinutes % (24 * 60);
+            endTimeInput.value = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
+
+            if (startDateInput.value) {
+                endDateInput.value = totalMinutes >= 24 * 60
+                    ? addDaysToDateStr(startDateInput.value, 1)
+                    : startDateInput.value;
+            }
+        }
+
         // データベースに登録されている終了日(翌日0時)を、画面(終了日当日)用にマイナス1日して返す
         function adjustEndDateForUI(endStr, isAllDay) {
             if (!isAllDay || !endStr) return endStr;
@@ -1573,6 +1619,28 @@
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
             const d = String(dateObj.getDate()).padStart(2, '0');
             return `${yyyy}-${m}-${d}`;
+        }
+
+        function syncEndDateFromStart() {
+            const startInput = document.getElementById('eventStart');
+            const endInput = document.getElementById('eventEnd');
+            const newStartDate = startInput.value;
+            if (!newStartDate) return;
+
+            if (lastEventStartDate && endInput.value) {
+                const parseUtcDate = value => {
+                    const [year, month, day] = value.split('-').map(Number);
+                    return Date.UTC(year, month - 1, day);
+                };
+                const dayDifference = Math.round(
+                    (parseUtcDate(newStartDate) - parseUtcDate(lastEventStartDate)) / (24 * 60 * 60 * 1000)
+                );
+                endInput.value = addDaysToDateStr(endInput.value, dayDifference);
+            } else if (!endInput.value) {
+                endInput.value = newStartDate;
+            }
+
+            lastEventStartDate = newStartDate;
         }
 
         function formatDateForEventPayload(dateObj, allDay) {
@@ -1867,7 +1935,6 @@
                     </div>
                     <input type="color" id="mgmtColor-${l.id}" value="${l.color}" style="width:24px; height:24px; border:none; padding:0; background:none; cursor:pointer; border-radius:50%; -webkit-appearance:none; appearance:none; flex-shrink:0;">
                     <input type="text" id="mgmtName-${l.id}" value="${l.name}">
-                    <button class="btn btn-primary" style="font-size:12px; padding:4px 8px; cursor:pointer;" onclick="updateLabel(${l.id})">保存</button>
                     <button class="btn" style="font-size:12px; padding:4px 8px; background-color:#8f1f2d; color:white; cursor:pointer;" onclick="deleteLabel(${l.id})">削除</button>
                 </div>
             `;
@@ -1980,6 +2047,51 @@
             });
         }
 
+        function saveAllLabels() {
+            const alertDiv = document.getElementById('labelAlert');
+            let hasInvalidInput = false;
+            const updates = cachedLabels.map(label => {
+                const nameInput = document.getElementById(`mgmtName-${label.id}`);
+                const colorInput = document.getElementById(`mgmtColor-${label.id}`);
+                if (!nameInput || !colorInput) return null;
+
+                const name = nameInput.value.trim();
+                if (!name) {
+                    nameInput.focus();
+                    hasInvalidInput = true;
+                    return null;
+                }
+
+                return fetch(`/api/labels/${label.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, color: colorInput.value })
+                }).then(res => res.json()).then(data => {
+                    if (!data.success) throw new Error(data.error || 'ラベルを保存できませんでした');
+                });
+            }).filter(Boolean);
+
+            if (hasInvalidInput) {
+                if (alertDiv) alertDiv.innerText = '名前を入力してください。';
+                return;
+            }
+            if (updates.length === 0) return;
+            if (alertDiv) alertDiv.innerText = '保存中...';
+            Promise.all(updates)
+                .then(() => loadLabels())
+                .then(() => {
+                    filterModalLabels(document.getElementById('editingEventId').value !== '');
+                    renderLabelManagement();
+                    refreshEvents();
+                    if (alertDiv) alertDiv.innerText = '保存しました。';
+                })
+                .catch(err => {
+                    console.error(err);
+                    if (alertDiv) alertDiv.innerText = err.message || 'ラベルを保存できませんでした。';
+                    else alert(err.message || 'ラベルを保存できませんでした。');
+                });
+        }
+
         function deleteLabel(id) {
             if(!confirm('このラベルを削除しますか？紐づく予定のカラーはデフォルトに戻ります。')) return;
             fetch(`/api/labels/${id}`, { method: 'DELETE' })
@@ -2021,6 +2133,22 @@
                 console.error(err);
                 alert('通信エラーが発生しました。');
             });
+        }
+
+        function isSingleDayCalendarEvent(event) {
+            const startDate = String(event.startStr || '').slice(0, 10);
+            const endDate = String(event.endStr || '').slice(0, 10);
+            if (!startDate || !endDate) return true;
+            if (!event.allDay) return startDate === endDate;
+
+            const nextDate = new Date(`${startDate}T00:00:00Z`);
+            nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+            return endDate <= nextDate.toISOString().slice(0, 10);
+        }
+
+        function shouldCenterCalendarEvent(event) {
+            const titleLength = Array.from(String(event.title || '').trim()).length;
+            return titleLength <= 5 && isSingleDayCalendarEvent(event);
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -2120,8 +2248,9 @@
                 },
 
                 eventClassNames: function(arg) {
-                    if (arg.event.extendedProps.is_holiday) return ['fc-event-holiday'];
                     const classes = [];
+                    if (arg.event.extendedProps.is_holiday) classes.push('fc-event-holiday');
+                    if (shouldCenterCalendarEvent(arg.event)) classes.push('fc-event-short-single-day');
                     if (arg.event.allDay) classes.push('fc-event-forced-all-day');
                     return classes;
                 },
@@ -2359,9 +2488,12 @@
 
         function openRegisterModal(startStr, endStr) {
             document.getElementById('editingEventId').value = '';
+            document.getElementById('editingOccurrenceStart').value = '';
+            document.getElementById('editingEventWasRecurring').value = '';
             document.getElementById('btnDeleteModal').style.display = 'none';
             document.getElementById('eventStart').value = startStr;
             document.getElementById('eventEnd').value = endStr;
+            lastEventStartDate = startStr;
             document.getElementById('eventTitle').value = '';
             document.getElementById('isShared').checked = true;
             document.getElementById('isAllDay').checked = true;
@@ -2378,6 +2510,8 @@
 
         function openEditModal(ev) {
             document.getElementById('editingEventId').value = ev.extendedProps?.original_id || ev.id;
+            document.getElementById('editingOccurrenceStart').value = ev.extendedProps?.occurrence_start || ev.start;
+            document.getElementById('editingEventWasRecurring').value = ev.extendedProps?.recurrence ? '1' : '';
             document.getElementById('btnDeleteModal').style.display = 'block';
             document.getElementById('eventTitle').value = ev.title;
             document.getElementById('isShared').checked = ev.extendedProps.is_shared;
@@ -2393,6 +2527,7 @@
                 displayEndDate = adjustEndDateForUI(displayEndDate, true);
             }
             document.getElementById('eventEnd').value = displayEndDate;
+            lastEventStartDate = startDateParts[0];
             
             if (!ev.allDay && startDateParts[1]) {
                 document.getElementById('startTime').value = startDateParts[1].substring(0, 5);
@@ -2426,7 +2561,7 @@
                 document.getElementById('overlay').style.display = 'none';
             }
         }
-        function closeAllModals() { closeDaySheet(); closeRegisterModal(); closeEventDragActionModal(false); }
+        function closeAllModals() { closeDaySheet(); closeRegisterModal(); closeEventDragActionModal(false); closeRecurrenceDeleteModal(false); closeRecurrenceSaveModal(false); }
 
         function setEventSaveBusy(isBusy) {
             isSavingEvent = isBusy;
@@ -2488,6 +2623,34 @@
 
             const eventId = document.getElementById('editingEventId').value;
 
+            if (eventId && document.getElementById('editingEventWasRecurring').value === '1') {
+                pendingRecurringSave = { payload, eventId };
+                document.getElementById('eventModal').style.display = 'none';
+                document.getElementById('recurrenceSaveModal').style.display = 'block';
+                return;
+            }
+
+            performEventSave(payload, eventId);
+        }
+
+        function closeRecurrenceSaveModal(restoreEditor) {
+            const modal = document.getElementById('recurrenceSaveModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+            if (restoreEditor && document.getElementById('editingEventId').value) {
+                document.getElementById('eventModal').style.display = 'block';
+            } else {
+                pendingRecurringSave = null;
+            }
+        }
+
+        function confirmRecurrenceSave(scope) {
+            if (!pendingRecurringSave || isSavingEvent) return;
+            const { payload, eventId } = pendingRecurringSave;
+            performEventSave(payload, eventId, scope);
+        }
+
+        function performEventSave(payload, eventId, scope) {
             const url = eventId
                 ? `/api/events/${eventId}`
                 : '/api/events';
@@ -2503,16 +2666,22 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(scope ? {
+                    ...payload,
+                    scope,
+                    occurrence_start: document.getElementById('editingOccurrenceStart').value
+                } : payload)
             })
-            .then(res => {
+            .then(async res => {
+                const data = await res.json().catch(() => ({}));
                 if (!res.ok) {
-                    throw new Error(`サーバーエラー (Status: ${res.status})`);
+                    throw new Error(data.error || `サーバーエラー (Status: ${res.status})`);
                 }
-                return res.json();
+                return data;
             })
             .then(data => {
                 if (data.success) {
+                    closeRecurrenceSaveModal(false);
                     closeRegisterModal();
                     refreshEvents().then(() => {
                         if (document.getElementById('daySheet').classList.contains('open') && selectedDateStr) {
@@ -2525,7 +2694,7 @@
             })
             .catch(err => {
                 console.error(err);
-                alert('通信エラーが発生しました。');
+                alert(err.message || '通信エラーが発生しました。');
             })
             .finally(() => {
                 setEventSaveBusy(false);
@@ -2535,24 +2704,54 @@
         function deleteEventFromModal() {
             const editingId = document.getElementById('editingEventId').value;
             if (!editingId) return;
+            if (document.getElementById('editingEventWasRecurring').value === '1') {
+                document.getElementById('eventModal').style.display = 'none';
+                document.getElementById('recurrenceDeleteModal').style.display = 'block';
+                return;
+            }
             if (!confirm("この予定を削除しますか？")) return;
+            performEventDelete('all');
+        }
 
-            fetch(`/api/events/${editingId}`, { method: 'DELETE' })
-            .then(res => {
-                if (res.ok) {
+        function closeRecurrenceDeleteModal(restoreEditor) {
+            const modal = document.getElementById('recurrenceDeleteModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+            if (restoreEditor && document.getElementById('editingEventId').value) {
+                document.getElementById('eventModal').style.display = 'block';
+            }
+        }
+
+        function confirmRecurrenceDelete(scope) {
+            performEventDelete(scope);
+        }
+
+        function performEventDelete(scope) {
+            const editingId = document.getElementById('editingEventId').value;
+            const occurrenceStart = document.getElementById('editingOccurrenceStart').value;
+
+            fetch(`/api/events/${editingId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scope, occurrence_start: occurrenceStart })
+            })
+            .then(async res => {
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.success) {
                     refreshEvents().then(() => {
+                        closeRecurrenceDeleteModal(false);
                         closeRegisterModal();
                         if (document.getElementById('daySheet').classList.contains('open')) {
                             openDaySheet(selectedDateStr);
                         }
                     });
-                } else {
-                    alert("サーバー側での削除に失敗しました。");
+                    return;
                 }
+                throw new Error(data.error || "サーバー側での削除に失敗しました。");
             })
             .catch(err => {
                 console.error(err);
-                alert("通信エラーが発生しました。");
+                alert(err.message || "通信エラーが発生しました。");
             });
         }
 

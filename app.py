@@ -3,6 +3,7 @@ import sqlite3
 import logging
 import copy
 import re
+import json
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 import holidays
@@ -21,6 +22,14 @@ def normalize_date_string(value):
         return datetime.strptime(value, '%Y-%m-%d').strftime('%Y-%m-%d')
     except (TypeError, ValueError):
         return value
+
+def parse_event_datetime(value):
+    if not value:
+        raise ValueError('Missing event datetime')
+    return datetime.strptime(value, '%Y-%m-%dT%H:%M:%S' if 'T' in value else '%Y-%m-%d')
+
+def format_event_datetime(value, has_time):
+    return value.strftime('%Y-%m-%dT%H:%M:%S' if has_time else '%Y-%m-%d')
 
 def escape_ics_text(value):
     return (value or '').replace('\\', '\\\\').replace('\n', '\\n').replace(',', '\\,').replace(';', '\\;')
@@ -116,6 +125,16 @@ def init_db():
         
         try:
             conn.execute('ALTER TABLE events ADD COLUMN memo TEXT')
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            conn.execute('ALTER TABLE events ADD COLUMN recurrence_until TEXT DEFAULT NULL')
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            conn.execute("ALTER TABLE events ADD COLUMN recurrence_exceptions TEXT NOT NULL DEFAULT '[]'")
         except sqlite3.OperationalError:
             pass
 
@@ -397,7 +416,7 @@ def get_events():
             params.extend([end_param[:10], start_param[:10]])
 
         rows = conn.execute(f'''
-            SELECT e.id, e.title, e.memo,e.start_time as start, e.end_time as end, e.is_shared, e.user_id, e.is_all_day, e.label_id, e.recurrence, l.color as label_color, l.sort_order as label_sort_order
+            SELECT e.id, e.title, e.memo,e.start_time as start, e.end_time as end, e.is_shared, e.user_id, e.is_all_day, e.label_id, e.recurrence, e.recurrence_until, e.recurrence_exceptions, l.color as label_color, l.sort_order as label_sort_order
             FROM events e
             LEFT JOIN labels l ON e.label_id = l.id
             WHERE (e.is_shared = 1 OR e.user_id = ?)
@@ -430,6 +449,7 @@ def get_events():
                 'label_id': row['label_id'],
                 'label_order': row['label_sort_order'] if row['label_sort_order'] is not None else 999,
                 'recurrence': row['recurrence'],
+                'occurrence_start': row['start'],
                 'memo': row['memo'],
                 'is_holiday': 0
             }
@@ -461,11 +481,25 @@ def get_events():
             
         duration = end_dt - start_dt
         current_start = start_dt
+        recurrence_until = None
+        if row['recurrence_until']:
+            try:
+                recurrence_until = datetime.strptime(
+                    row['recurrence_until'],
+                    '%Y-%m-%dT%H:%M:%S' if 'T' in row['recurrence_until'] else '%Y-%m-%d'
+                )
+            except (TypeError, ValueError):
+                recurrence_until = None
+        try:
+            recurrence_exceptions = set(json.loads(row['recurrence_exceptions'] or '[]'))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            recurrence_exceptions = set()
         
         # 郢ｰ繧願ｿ斐＠莠亥ｮ壹ｒ譛滄俣蜀・↓隍・｣ｽ縺励※螻暮幕驟咲ｽｮ縺吶ｋ繝ｫ繝ｼ繝・
         # ・域怙蛻昴・1莉ｶ逶ｮ縺ｯ蜈・・菴咲ｽｮ縲∽ｻ･髯阪ｒ險ｭ螳壹↓蠢懊§縺ｦ譛ｪ譚･縺ｸ縺壹ｉ縺励↑縺後ｉ繧ｳ繝斐・繧堤函謌撰ｼ・
-        while current_start <= view_end:
-            if current_start >= view_start:
+        while current_start <= view_end and (recurrence_until is None or current_start < recurrence_until):
+            current_start_text = current_start.strftime('%Y-%m-%dT%H:%M:%S' if has_time else '%Y-%m-%d')
+            if current_start >= view_start and current_start_text not in recurrence_exceptions:
                 # 逕ｻ髱｢騾∽ｿ｡逕ｨ繝輔か繝ｼ繝槭ャ繝医↓蜀榊､画鋤
                 if has_time:
                     start_str = current_start.strftime('%Y-%m-%dT%H:%M:%S')
@@ -478,6 +512,7 @@ def get_events():
 
                 copied_event['start'] = start_str
                 copied_event['end'] = end_str
+                copied_event['extendedProps']['occurrence_start'] = start_str
                 # FullCalendar荳翫〒蜷後§ID縺縺ｨ繝舌げ繧句次蝗縺ｫ縺ｪ繧九◆繧√√う繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ蝗ｺ譛峨・謫ｬ莨ｼID・井ｾ・ 10_20260512・峨ｒ莉倅ｸ・
                 copied_event['id'] = f"{row['id']}_{current_start.strftime('%Y%m%d')}"
                 
@@ -588,17 +623,140 @@ def handle_event(event_id):
             recurrence = data.get('recurrence', None)
             if recurrence == '':
                 recurrence = None
-            
+
+            scope = data.get('scope', 'all')
+            occurrence_start = data.get('occurrence_start')
+
+            if event['recurrence'] and scope in ('single', 'future'):
+                try:
+                    occurrence_dt = parse_event_datetime(occurrence_start)
+                    base_dt = parse_event_datetime(event['start_time'])
+                except (TypeError, ValueError):
+                    return jsonify({'error': 'Invalid occurrence_start'}), 400
+                if occurrence_dt < base_dt:
+                    return jsonify({'error': 'Invalid occurrence_start'}), 400
+
+                if scope == 'single':
+                    try:
+                        exceptions = json.loads(event['recurrence_exceptions'] or '[]')
+                    except (TypeError, ValueError, json.JSONDecodeError):
+                        exceptions = []
+                    if occurrence_start not in exceptions:
+                        exceptions.append(occurrence_start)
+                    conn.execute(
+                        'UPDATE events SET recurrence_exceptions = ? WHERE id = ?',
+                        (json.dumps(exceptions, ensure_ascii=False), event_id)
+                    )
+                    new_recurrence = None
+                else:
+                    if occurrence_start == event['start_time']:
+                        conn.execute('DELETE FROM events WHERE id = ?', (event_id,))
+                    else:
+                        conn.execute(
+                            'UPDATE events SET recurrence_until = ? WHERE id = ?',
+                            (occurrence_start, event_id)
+                        )
+                    new_recurrence = recurrence
+
+                cursor = conn.execute('''
+                    INSERT INTO events (
+                        user_id, title, start_time, end_time, is_shared,
+                        is_all_day, label_id, recurrence, memo
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    current_user_id, title, start, end, is_shared,
+                    is_all_day, label_id, new_recurrence, memo
+                ))
+                conn.commit()
+                return jsonify({'success': True, 'id': cursor.lastrowid})
+
+            adjusted_start = start
+            adjusted_end = end
+            recurrence_until = event['recurrence_until']
+            try:
+                recurrence_exceptions = json.loads(event['recurrence_exceptions'] or '[]')
+            except (TypeError, ValueError, json.JSONDecodeError):
+                recurrence_exceptions = []
+
+            if event['recurrence'] and occurrence_start and recurrence is not None:
+                try:
+                    occurrence_dt = parse_event_datetime(occurrence_start)
+                    edited_start_dt = parse_event_datetime(start)
+                    edited_end_dt = parse_event_datetime(end)
+                    base_start_dt = parse_event_datetime(event['start_time'])
+                    delta = edited_start_dt - occurrence_dt
+                    duration = edited_end_dt - edited_start_dt
+                    adjusted_base_start = base_start_dt + delta
+                    has_time = 'T' in start
+                    adjusted_start = format_event_datetime(adjusted_base_start, has_time)
+                    adjusted_end = format_event_datetime(adjusted_base_start + duration, has_time)
+                    recurrence_exceptions = [
+                        format_event_datetime(parse_event_datetime(value) + delta, has_time)
+                        for value in recurrence_exceptions
+                    ]
+                    if recurrence_until:
+                        recurrence_until = format_event_datetime(
+                            parse_event_datetime(recurrence_until) + delta,
+                            has_time
+                        )
+                except (TypeError, ValueError):
+                    return jsonify({'error': 'Invalid event datetime'}), 400
+
+            if recurrence is None:
+                recurrence_until = None
+                recurrence_exceptions = []
+
             conn.execute('''
                 UPDATE events 
-                SET title = ?, start_time = ?, end_time = ?, is_shared = ?, is_all_day = ?, label_id = ?, recurrence = ?,memo=?
+                SET title = ?, start_time = ?, end_time = ?, is_shared = ?,
+                    is_all_day = ?, label_id = ?, recurrence = ?, memo = ?,
+                    recurrence_until = ?, recurrence_exceptions = ?
                 WHERE id = ?
-            ''', (title, start, end, is_shared, is_all_day, label_id, recurrence, memo, event_id))
+            ''', (
+                title, adjusted_start, adjusted_end, is_shared, is_all_day,
+                label_id, recurrence, memo, recurrence_until,
+                json.dumps(recurrence_exceptions, ensure_ascii=False), event_id
+            ))
             conn.commit()
             return jsonify({'success': True})
 
         elif request.method == 'DELETE':
-            conn.execute('DELETE FROM events WHERE id = ?', (event_id,))
+            data = request.get_json(silent=True) or {}
+            scope = data.get('scope', 'all')
+            occurrence_start = data.get('occurrence_start')
+
+            if event['recurrence'] and scope in ('single', 'future'):
+                if not occurrence_start:
+                    return jsonify({'error': 'occurrence_start is required'}), 400
+                date_format = '%Y-%m-%dT%H:%M:%S' if 'T' in occurrence_start else '%Y-%m-%d'
+                try:
+                    occurrence_dt = datetime.strptime(occurrence_start, date_format)
+                    base_dt = datetime.strptime(event['start_time'], date_format)
+                except (TypeError, ValueError):
+                    return jsonify({'error': 'Invalid occurrence_start'}), 400
+                if occurrence_dt < base_dt:
+                    return jsonify({'error': 'Invalid occurrence_start'}), 400
+
+                if scope == 'single':
+                    try:
+                        exceptions = json.loads(event['recurrence_exceptions'] or '[]')
+                    except (TypeError, ValueError, json.JSONDecodeError):
+                        exceptions = []
+                    if occurrence_start not in exceptions:
+                        exceptions.append(occurrence_start)
+                    conn.execute(
+                        'UPDATE events SET recurrence_exceptions = ? WHERE id = ?',
+                        (json.dumps(exceptions, ensure_ascii=False), event_id)
+                    )
+                elif occurrence_start == event['start_time']:
+                    conn.execute('DELETE FROM events WHERE id = ?', (event_id,))
+                else:
+                    conn.execute(
+                        'UPDATE events SET recurrence_until = ? WHERE id = ?',
+                        (occurrence_start, event_id)
+                    )
+            else:
+                conn.execute('DELETE FROM events WHERE id = ?', (event_id,))
             conn.commit()
             return jsonify({'success': True})
             

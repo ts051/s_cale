@@ -1,0 +1,2 @@
+-- This migration was applied in Supabase before local migration files were tracked.
+-- Kept as a history marker so subsequent repository migrations can be pushed safely.
