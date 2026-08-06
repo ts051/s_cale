@@ -670,8 +670,8 @@
             color: var(--fc-event-text-solid-color, #7a94a6) !important;
             padding: 1px 4px !important;
         }
-        .fc-daygrid-event:not(.fc-event-forced-all-day,.fc-event-holiday) .fc-event-main,
-        .fc-daygrid-event:not(.fc-event-forced-all-day,.fc-event-holiday) .fc-event-title {
+        .fc-daygrid-event:not(.fc-event-forced-all-day,.fc-event-holiday,.fc-event-lunatree) .fc-event-main,
+        .fc-daygrid-event:not(.fc-event-forced-all-day,.fc-event-holiday,.fc-event-lunatree) .fc-event-title {
             color: var(--fc-event-text-solid-color, #7a94a6) !important;
             font-weight: 700 !important;
         }
@@ -691,6 +691,10 @@
             color: #ffffff !important;
             font-size: 8.5px !important;
             font-weight: 700 !important;
+        }
+        .fc-daygrid-event.fc-event-lunatree .fc-event-main,
+        .fc-daygrid-event.fc-event-lunatree .fc-event-title {
+            color: #ffffff !important;
         }
         body.dark-mode .fc-event-holiday {
             background-color: #b31412 !important;
