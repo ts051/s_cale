@@ -2361,12 +2361,6 @@
                 filterModalLabels(false);
             }
 
-            const cachedHolidayData = getCachedJson(rangeUrls.holidays);
-            const cachedEventData = getCachedJson(rangeUrls.events);
-            if (cachedHolidayData !== null && cachedEventData !== null) {
-                renderCalendarData(cachedHolidayData, cachedEventData);
-            }
-
             loadLabels()
                 .then(() => {
                     filterModalLabels(false);
@@ -2377,6 +2371,8 @@
                     filterModalLabels(false);
                 });
 
+            // 予定は通信結果を待ってから描画する。通信失敗時のキャッシュ復元は
+            // fetchJsonWithCache に任せ、古い予定の先行表示を避ける。
             Promise.all([
                 fetchJsonWithCache(rangeUrls.holidays).then(value => ({ ok: true, value }), reason => ({ ok: false, reason })),
                 fetchJsonWithCache(rangeUrls.events).then(value => ({ ok: true, value }), reason => ({ ok: false, reason }))
