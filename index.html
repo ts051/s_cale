@@ -595,11 +595,10 @@
         .fc .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number { color: #8f1f2d !important; }
         /* Keep today visible even when weekend backgrounds are applied. */
         .fc .fc-daygrid-day.fc-day-today {
-            background-color: #fff3c4;
+            --fc-today-bg-color: transparent;
             box-shadow: inset 0 0 0 2px #a66b00;
         }
         body.dark-mode .fc .fc-daygrid-day.fc-day-today {
-            background-color: #3b321b;
             box-shadow: inset 0 0 0 2px #e5b84b;
         }
 
