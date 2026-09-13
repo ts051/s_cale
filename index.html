@@ -593,6 +593,15 @@
         .fc .fc-daygrid-day.fc-day-sun { background-color: #fdf2f2; }
         .fc .fc-daygrid-day.fc-day-sat .fc-daygrid-day-number { color: #2f6f4e !important; }
         .fc .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number { color: #8f1f2d !important; }
+        /* Keep today visible even when weekend backgrounds are applied. */
+        .fc .fc-daygrid-day.fc-day-today {
+            background-color: #fff3c4;
+            box-shadow: inset 0 0 0 2px #a66b00;
+        }
+        body.dark-mode .fc .fc-daygrid-day.fc-day-today {
+            background-color: #3b321b;
+            box-shadow: inset 0 0 0 2px #e5b84b;
+        }
 
         .fc .fc-col-header-cell-cushion { font-size: 10px; color: #70757a; padding: 4px 0 !important; text-decoration: none !important; }
         .fc .fc-daygrid-day-number { font-size: 10px; color: #3c4043; padding: 2px 4px !important; text-decoration: none !important; }
