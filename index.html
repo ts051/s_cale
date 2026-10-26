@@ -1146,6 +1146,18 @@
             outline-offset: -2px;
             background-color: rgba(47, 111, 78, 0.12);
         }
+        .day-card-month-hint {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2100;
+            padding: 6px 16px;
+            border-radius: 16px;
+            background: #2f6f4e;
+            color: #fff;
+            font-size: 13px;
+            pointer-events: none;
+        }
         .day-event-dot {
             width: 10px;
             height: 10px;
@@ -2668,11 +2680,62 @@
         }
 
         function updateDayCardDragGhost(state, x, y) {
+            state.pointerX = x;
+            state.pointerY = y;
             if (state.ghost) {
                 state.ghost.style.transform = `translate3d(${x + 12}px, ${y + 12}px, 0)`;
             }
             state.targetDate = getCalendarDateFromPoint(x, y);
             setDayCardDropTarget(state.targetDate);
+            updateDayCardDragMonthNavigation(state);
+        }
+
+        function getDayCardDragMonthDirection(state) {
+            if (!calendar || calendar.view.type !== 'dayGridMonth') return '';
+            const cells = document.querySelectorAll('#calendar .fc-daygrid-day[data-date]');
+            if (!cells.length) return '';
+            const first = cells[0].getBoundingClientRect();
+            const last = cells[cells.length - 1].getBoundingClientRect();
+            if (state.pointerX < first.left || state.pointerX > last.right) return '';
+            if (state.pointerY < first.top) return 'prev';
+            if (state.pointerY > last.bottom) return 'next';
+            return '';
+        }
+
+        function updateDayCardDragMonthNavigation(state) {
+            const direction = getDayCardDragMonthDirection(state);
+            if (state.monthDirection === direction) return;
+            clearTimeout(state.monthTimer);
+            state.monthTimer = null;
+            state.monthDirection = direction;
+            if (state.monthHint) state.monthHint.remove();
+            state.monthHint = null;
+            if (!direction) return;
+
+            const hint = document.createElement('div');
+            hint.className = 'day-card-month-hint';
+            hint.textContent = direction === 'prev' ? '↑ 前月へ' : '翌月へ ↓';
+            hint.style.top = `${Math.max(8, Math.min(window.innerHeight - 40, state.pointerY - 16))}px`;
+            document.body.appendChild(hint);
+            state.monthHint = hint;
+            const changeMonth = () => {
+                state.monthTimer = null;
+                if (dayCardDragState !== state || !state.active) return;
+                if (getDayCardDragMonthDirection(state) !== direction) {
+                    updateDayCardDragMonthNavigation(state);
+                    return;
+                }
+                suppressCalendarSwipeUntil = Date.now() + 1500;
+                calendar[direction]();
+                state.targetDate = getCalendarDateFromPoint(state.pointerX, state.pointerY);
+                setDayCardDropTarget(state.targetDate);
+                if (getDayCardDragMonthDirection(state) === direction) {
+                    state.monthTimer = setTimeout(changeMonth, 1000);
+                } else {
+                    updateDayCardDragMonthNavigation(state);
+                }
+            };
+            state.monthTimer = setTimeout(changeMonth, 650);
         }
 
         function hideDaySheetForDrag() {
@@ -2686,6 +2749,9 @@
             if (!dayCardDragState) return null;
             const state = dayCardDragState;
             if (state.timer) clearTimeout(state.timer);
+            clearTimeout(state.monthTimer);
+            if (state.monthHint) state.monthHint.remove();
+            if (state.active) suppressCalendarSwipeUntil = Date.now() + 800;
             document.removeEventListener('pointermove', state.onPointerMove);
             document.removeEventListener('pointerup', state.onPointerUp);
             document.removeEventListener('pointercancel', state.onPointerCancel);
@@ -2740,7 +2806,7 @@
                     if (!finished?.active) return;
                     upEvent.preventDefault();
                     suppressDayCardClickUntil = Date.now() + 800;
-                    const targetDate = finished.targetDate || getCalendarDateFromPoint(upEvent.clientX, upEvent.clientY);
+                    const targetDate = getCalendarDateFromPoint(upEvent.clientX, upEvent.clientY);
                     if (targetDate) {
                         openEventDragActionModal(finished.eventData, targetDate);
                     } else if (selectedDateStr) {
