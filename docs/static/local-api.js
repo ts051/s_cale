@@ -60,22 +60,6 @@
       || (message.includes('could not find') && message.includes('login_ids'));
   }
 
-  async function lookupLoginId(username) {
-    try {
-      const { data, error } = await client
-        .from('login_ids')
-        .select('auth_email, is_active')
-        .eq('login_id', normalizeUsername(username))
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) return { email: null, blocked: false };
-      return { email: data.is_active ? data.auth_email : null, blocked: !data.is_active };
-    } catch (error) {
-      if (!isMissingLoginIdsTable(error)) console.warn('Login ID lookup failed:', error);
-      return { email: null, blocked: false };
-    }
-  }
-
   async function replaceLoginId(user, loginId, previousLoginId, required) {
     const normalized = normalizeUsername(loginId);
     if (!normalized) return;
@@ -125,17 +109,18 @@
   }
 
   async function signInWithUsername(username, password) {
-    const loginId = await lookupLoginId(username);
-    if (loginId.blocked) return { error: new Error('Login ID has been changed.') };
-
-    const emails = [loginId.email, usernameToEmail(username), usernameToLegacyEmail(username)].filter(Boolean);
-    let lastError = null;
-    for (const email of [...new Set(emails)]) {
-      const result = await client.auth.signInWithPassword({ email, password });
-      if (!result.error) return result;
-      lastError = result.error;
+    try {
+      const response = await nativeFetch(config.url + '/functions/v1/account-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: config.anonKey },
+        cache: 'no-store',
+        body: JSON.stringify({ username: normalizeUsername(username), password })
+      });
+      if (!response.ok) return { error: new Error('ユーザー名またはパスワードを確認してください。') };
+      return await client.auth.setSession(await response.json());
+    } catch {
+      return { error: new Error('ログインに接続できません。') };
     }
-    return { error: lastError };
   }
 
   async function getSessionUser() {

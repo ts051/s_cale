@@ -1,9 +1,9 @@
-const CACHE_VERSION = 'whitetree-shell-v96';
+const CACHE_VERSION = 'whitetree-shell-private-login-20261124';
 const APP_SHELL = [
   './',
   './static/manifest.webmanifest?v=pwa-start-1',
   './static/supabase-config.js?v=account-name-2',
-  './static/local-api.js?v=recurrence-edit-2',
+  './static/local-api.js?v=private-login-20261124',
   './static/fullcalendar-6.1.18.min.js?v=fc-local-1',
   './static/icons/icon-192.png',
   './static/icons/icon-512.png',
@@ -31,6 +31,8 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+  // Authentication and Supabase API responses must never enter the app-shell cache.
+  if (url.origin !== self.location.origin) return;
   if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) return;
 
   event.respondWith((async () => {
